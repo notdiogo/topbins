@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
+      build: {
+        outDir: 'dist',
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
