@@ -1,0 +1,201 @@
+
+import { NavItem, SectionId, Bet, UserStats } from './types';
+
+export const NAV_ITEMS: NavItem[] = [
+  { label: 'HQ', id: SectionId.HOME },
+  { label: 'LEDGER', id: SectionId.DASHBOARD },
+  { label: 'ARCHIVE', id: SectionId.HISTORY },
+];
+
+export const MOCK_USER_STATS: UserStats = {
+  totalBets: 5,
+  winRate: 0,
+  profit: 0,
+  currentStreak: 0
+};
+
+export const MOCK_IMAGES = {
+  HERO: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1931&auto=format&fit=crop",
+  TEXTURE_METALLIC: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop",
+  STREET_1: "https://images.unsplash.com/photo-1486286701208-1d58e9338013?q=80&w=2070&auto=format&fit=crop",
+  STREET_2: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?q=80&w=1931&auto=format&fit=crop",
+};
+
+// Proxy images for players (Urban/Sport style)
+const PLAYER_IMGS = {
+  ODEGAARD: "/Martin-avatar.png",
+  BRUNO: "/Bruno-avatar.png",
+  NONI: "/Noni-avatar.png",
+  ZIRKZEE: "/Zirkzee-avatar.png",
+  CHERKI: "/Cherki-avatar.png",
+  FRIMPONG: "/Frimpong-avatar.png",
+  NUNES: "/Nunes-avatar.png",
+  CUNHA: "/Cunha-avatar.png",
+};
+
+const TEXTURES = {
+  STADIUM_DARK: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=2070&auto=format&fit=crop",
+  CONCRETE: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1931&auto=format&fit=crop",
+  NIGHT_CITY: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=2074&auto=format&fit=crop",
+  GRASS_DARK: "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?q=80&w=2074&auto=format&fit=crop",
+};
+
+const FACE_OFF_URL = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2093&auto=format&fit=crop";
+
+export const MOCK_BETS: Bet[] = [
+  {
+    id: 'bet_01',
+    slug: 'odegaard-vs-bruno',
+    title: 'Odegaard vs Bruno',
+    league: 'EPL',
+    season: '2025-2026',
+    type: 'PLAYER_VS_PLAYER',
+    criteria: "Straight comparison of total assists in the Premier League.",
+    voidConditions: "Bet void if one player accumulates two months more injury time than the other.",
+    prize: "Winner receives one jersey or teamwear item.",
+    status: 'ACTIVE',
+    heroImage: "/martin-bruno.png",
+    useCustomHero: true,
+    participants: [
+      { name: 'Mitch', side: 'A' },
+      { name: 'Shiv', side: 'B' }
+    ],
+    entities: [
+      { name: 'Martin Odegaard', type: 'PLAYER', side: 'A', image: PLAYER_IMGS.ODEGAARD },
+      { name: 'Bruno Fernandes', type: 'PLAYER', side: 'B', image: PLAYER_IMGS.BRUNO }
+    ],
+    metrics: {
+      label: 'Assists',
+      valueA: 1,
+      valueB: 3
+    }
+  },
+  {
+    id: 'bet_02',
+    slug: 'zirkzee-vs-madueke',
+    title: 'Zirkzee vs Madueke',
+    league: 'EPL + FA CUP + CARABAO',
+    season: '2025-2026',
+    type: 'PLAYER_VS_PLAYER',
+    criteria: "Most combined Goals + Assists (G/A) across EPL, Carabao Cup, and FA Cup. Minutes played are ignored.",
+    voidConditions: "Bet void if one player accumulates two months more injury time than the other.",
+    prize: "Prize to be decided.",
+    status: 'ACTIVE',
+    heroImage: "/noni-zirk.png",
+    useCustomHero: true,
+    participants: [
+      { name: 'Mitch', side: 'A' },
+      { name: 'Shiv', side: 'B' }
+    ],
+    entities: [
+      { name: 'Joshua Zirkzee', type: 'PLAYER', side: 'A', image: PLAYER_IMGS.ZIRKZEE },
+      { name: 'Noni Madueke', type: 'PLAYER', side: 'B', image: PLAYER_IMGS.NONI }
+    ],
+    metrics: {
+      label: 'G/A (All Comps)',
+      valueA: 0,
+      valueB: 0
+    }
+  },
+  {
+    id: 'bet_03',
+    slug: 'zirkzee-vs-cherki',
+    title: 'Zirkzee vs Cherki',
+    league: 'EPL + FA CUP + CARABAO',
+    season: '2025-2026',
+    type: 'PLAYER_VS_PLAYER',
+    criteria: "Most combined Goals + Assists (G/A) across EPL, Carabao Cup, and FA Cup. Minutes played are ignored.",
+    voidConditions: "Bet void if one player suffers two months more injury than the other.",
+    prize: "Shiv owes one espresso bean coffee bag. Diogo owes one sleeve of Nespresso pods.",
+    status: 'ACTIVE',
+    heroImage: "/zirk-chirk.png",
+    useCustomHero: true,
+    participants: [
+      { name: 'Shiv', side: 'A' },
+      { name: 'Diogo', side: 'B' }
+    ],
+    entities: [
+      { name: 'Joshua Zirkzee', type: 'PLAYER', side: 'A', image: PLAYER_IMGS.ZIRKZEE },
+      { name: 'Rayan Cherki', type: 'PLAYER', side: 'B', image: PLAYER_IMGS.CHERKI }
+    ],
+    metrics: {
+      label: 'G/A (All Comps)',
+      valueA: 0,
+      valueB: 5
+    }
+  },
+  {
+    id: 'bet_04',
+    slug: 'frimpong-vs-nunes',
+    title: 'Frimpong vs Nunes',
+    league: 'EPL',
+    season: '2025-2026',
+    type: 'PLAYER_VS_PLAYER',
+    criteria: "Highest average FotMob rating across the season. Minimum 25 matches played required.",
+    voidConditions: "If either player finishes the season with fewer than 25 matches played.",
+    prize: "Prize to be decided.",
+    status: 'ACTIVE',
+    heroImage: "/frimpong-nunes.png",
+    useCustomHero: true,
+    participants: [
+      { name: 'Shiv', side: 'A' },
+      { name: 'Diogo', side: 'B' }
+    ],
+    entities: [
+      { name: 'Jeremie Frimpong', type: 'PLAYER', side: 'A', image: PLAYER_IMGS.FRIMPONG },
+      { name: 'Matheus Nunes', type: 'PLAYER', side: 'B', image: PLAYER_IMGS.NUNES }
+    ],
+    metrics: {
+      label: 'Avg Rating',
+      valueA: 6.6,
+      valueB: 7.5
+    }
+  },
+  {
+    id: 'bet_05',
+    slug: 'cunha-threshold',
+    title: 'Matheus Cunha Target',
+    league: 'EPL',
+    season: '2025-2026',
+    type: 'PLAYER_THRESHOLD',
+    criteria: "Reach 20 Non-Penalty Goals + Assists (G/A) in the Premier League.",
+    voidConditions: "Void if Cunha suffers two injuries totaling 12+ weeks.",
+    prize: "Pack of 12 golf balls (Titleist Pro V1 equivalent).",
+    status: 'ACTIVE',
+    heroImage: "/cunha-large.png",
+    participants: [
+      { name: 'Shiv', side: 'A' },
+      { name: 'Diogo', side: 'B' },
+      { name: 'Mitch', side: 'B' }
+    ],
+    entities: [
+      { name: 'Matheus Cunha', type: 'PLAYER', side: 'A', image: PLAYER_IMGS.CUNHA }
+    ],
+    metrics: {
+      label: 'Non-Pen G/A',
+      valueA: 1,
+      target: 20
+    }
+  }
+];
+
+export const TECH_SPECS = [
+  {
+    title: "Tracking Engine",
+    description: "Monitoring 5 simultaneous player feeds across EPL, FA Cup, and Carabao Cup data sources.",
+    icon: "target",
+    gridArea: "col-span-1 row-span-1"
+  },
+  {
+    title: "Void Condition Protocol",
+    description: "Automated injury duration analysis to trigger void clauses immediately upon threshold breach.",
+    icon: "zap",
+    gridArea: "col-span-1 row-span-1"
+  },
+  {
+    title: "Settlement Ledger",
+    description: "Immutable record of all friendly wagers, prizes, and coffee debts.",
+    icon: "activity",
+    gridArea: "col-span-2 row-span-2"
+  }
+];
