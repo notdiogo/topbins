@@ -1,5 +1,5 @@
 
-import { NavItem, SectionId, Bet, UserStats } from './types';
+import { NavItem, SectionId, Bet, UserStats, MonthlyStanding } from './types';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'HQ', id: SectionId.HOME },
@@ -175,6 +175,56 @@ export const MOCK_BETS: Bet[] = [
       label: 'Non-Pen G/A',
       valueA: 1,
       target: 20
+    }
+  },
+  {
+    id: 'bet_06',
+    slug: 'man-utd-vs-liverpool',
+    title: 'Liverpool vs Man Utd',
+    league: 'EPL',
+    season: '2025-2026',
+    type: 'TEAM_VS_TEAM',
+    criteria: "Who finishes higher in EPL standings.",
+    voidConditions: "Standard rules apply.",
+    prize: "Mitch owes Shiv a shoe bag. Shiv does a 90s cold plunge (full body immersion).",
+    status: 'ACTIVE',
+    heroImage: "/liverpoolvsunited.png",
+    useCustomHero: true,
+    participants: [
+      { name: 'Mitch', side: 'A' },
+      { name: 'Shiv', side: 'B' }
+    ],
+    entities: [
+        { name: 'Liverpool', type: 'TEAM', side: 'A', image: "/Liverpool.png" },
+      { name: 'Manchester United', type: 'TEAM', side: 'B', image: "/United.png" }
+    ],
+    metrics: {
+      label: 'League Position',
+      valueA: 12,
+      valueB: 10,
+      isInverse: true,
+      maxValue: 20
+    }
+  }
+];
+
+export const LEAGUE_HISTORY: MonthlyStanding[] = [
+  {
+    month: 'OCT',
+    year: '2025',
+    scores: {
+      Diogo: 3,
+      Shiv: 1,
+      Mitch: 2
+    }
+  },
+  {
+    month: 'NOV',
+    year: '2025',
+    scores: {
+      Diogo: 3,
+      Shiv: 2,
+      Mitch: 1
     }
   }
 ];

@@ -37,7 +37,7 @@ export const Dashboard: React.FC = () => {
            </div>
            <div className="flex items-center gap-2 text-xs font-mono text-gray-500 uppercase tracking-widest">
               <Clock className="w-4 h-4" />
-              Last updated: Fri Nov 21
+              Last updated: Mon Nov 24
            </div>
         </div>
 

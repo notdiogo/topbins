@@ -1,6 +1,7 @@
 import React from 'react';
 import { Hero } from './components/Hero';
 import { Dashboard } from './components/Dashboard';
+import { LiveLeaderboard } from './components/LiveLeaderboard';
 import { SectionId } from './types';
 
 const App: React.FC = () => {
@@ -18,10 +19,12 @@ const App: React.FC = () => {
         <section id={SectionId.HOME}>
           <Hero onNavigate={scrollToSection} />
         </section>
-        
+
         <section id={SectionId.DASHBOARD}>
           <Dashboard />
         </section>
+
+        <LiveLeaderboard />
       </main>
     </div>
   );

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bet } from '../types';
 import { ChevronRight } from 'lucide-react';
@@ -7,6 +6,22 @@ interface BetListRowProps {
   bet: Bet;
   onClick: () => void;
 }
+
+const formatValue = (val: number, isInverse?: boolean) => {
+  if (!isInverse) return val;
+  const j = val % 10,
+        k = val % 100;
+  if (j == 1 && k != 11) {
+      return val + "st";
+  }
+  if (j == 2 && k != 12) {
+      return val + "nd";
+  }
+  if (j == 3 && k != 13) {
+      return val + "rd";
+  }
+  return val + "th";
+};
 
 export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
   
@@ -27,6 +42,42 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
   const sideA = bet.participants.filter(p => p.side === 'A').map(p => p.name).join(' & ');
   const sideB = bet.participants.filter(p => p.side === 'B').map(p => p.name).join(' & ');
 
+  // Metrics Helpers
+  const valueA = bet.metrics?.valueA || 0;
+  const valueB = bet.metrics?.valueB || 0;
+  const target = bet.metrics?.target;
+  const isInverse = bet.metrics?.isInverse;
+  const maxValue = bet.metrics?.maxValue;
+
+  const isWinningA = target 
+    ? valueA >= target 
+    : isInverse 
+      ? valueA < valueB 
+      : valueA > valueB;
+
+  const isWinningB = target
+    ? false // Threshold bets usually single player?
+    : isInverse
+      ? valueB < valueA
+      : valueB > valueA;
+
+  const getBarWidth = (val: number, other: number) => {
+    if (target) {
+        return Math.min(100, (val / target) * 100);
+    }
+    if (isInverse) {
+        // Inverse: Lower is better. 
+        // We want the bar to be fuller if the position is better (lower number).
+        // e.g. Rank 1 (Best) -> 100%, Rank 20 (Worst) -> 5%
+        const max = maxValue || 20; // Default to 20 if not set for inverse
+        const percentage = ((max - val + 1) / max) * 100;
+        return Math.max(5, Math.min(100, percentage));
+    }
+    // Standard: Higher is better. Relative to the max value of the two players.
+    const max = Math.max(val, other, 1);
+    return Math.min(100, (val / max) * 100);
+  };
+
   return (
     <div 
       onClick={onClick}
@@ -46,9 +97,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
            <div className="flex items-center relative z-10 pl-4">
               {/* Player A Avatar */}
               <div className={`w-16 h-16 rounded-full border-2 overflow-hidden relative z-20 shadow-lg bg-zinc-800 ${
-                bet.metrics?.target 
-                  ? ((bet.metrics.valueA || 0) >= bet.metrics.target ? 'border-[#CCFF00]' : 'border-white/20')
-                  : (!bet.metrics || (bet.metrics.valueA || 0) > (bet.metrics.valueB || 0) ? 'border-[#CCFF00]' : 'border-white/20')
+                bet.metrics && isWinningA ? 'border-[#CCFF00]' : 'border-white/20'
               }`}>
                  <img src={entityA?.image} alt={entityA?.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
               </div>
@@ -60,7 +109,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
 
                   {/* Player B Avatar */}
                   <div className={`w-16 h-16 rounded-full border-2 overflow-hidden relative z-10 -ml-3 bg-zinc-800 ${
-                    bet.metrics && (bet.metrics.valueB || 0) > (bet.metrics.valueA || 0) ? 'border-[#CCFF00]' : 'border-white/20'
+                    bet.metrics && isWinningB ? 'border-[#CCFF00]' : 'border-white/20'
                   }`}>
                      <img src={entityB?.image} alt={entityB?.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
                   </div>
@@ -93,32 +142,30 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                   <div className="h-3 w-full bg-white/10 rounded-sm overflow-hidden">
                     <div 
                       className={`h-full transition-all duration-500 ${
-                        (bet.metrics.valueA || 0) >= (bet.metrics.target || 0) ? 'bg-[#CCFF00]' : 'bg-white/40'
+                        isWinningA ? 'bg-[#CCFF00]' : 'bg-white/40'
                       }`}
-                      style={{ width: `${Math.min(100, (bet.metrics.valueA / bet.metrics.target) * 100)}%` }}
+                      style={{ width: `${getBarWidth(valueA, 0)}%` }}
                     ></div>
                   </div>
                </div>
              )}
 
-             {bet.type === 'PLAYER_VS_PLAYER' && bet.metrics && (
+             {(bet.type === 'PLAYER_VS_PLAYER' || bet.type === 'TEAM_VS_TEAM') && bet.metrics && (
                <div className="flex flex-col gap-2 mt-2">
                   {/* Player A Bar */}
                   <div className="flex items-center gap-3">
                      <div className="flex-1 h-3 bg-white/10 rounded-sm overflow-hidden">
                         <div 
                            className={`h-full transition-all duration-500 ${
-                             (bet.metrics.valueA || 0) > (bet.metrics.valueB || 0) 
-                               ? 'bg-[#CCFF00]' 
-                               : 'bg-white/40'
+                             isWinningA ? 'bg-[#CCFF00]' : 'bg-white/40'
                            }`}
-                           style={{ width: `${Math.min(100, ((bet.metrics.valueA || 0) / Math.max((bet.metrics.valueA || 0), (bet.metrics.valueB || 0), 1)) * 100)}%` }}
+                           style={{ width: `${getBarWidth(valueA, valueB)}%` }}
                         ></div>
                      </div>
-                     <div className={`w-8 text-xs font-mono font-bold text-left ${
-                        (bet.metrics.valueA || 0) > (bet.metrics.valueB || 0) ? 'text-[#CCFF00]' : 'text-gray-400'
+                     <div className={`w-10 text-xs font-mono font-bold text-left ${
+                        isWinningA ? 'text-[#CCFF00]' : 'text-gray-400'
                      }`}>
-                       {bet.metrics.valueA}
+                       {formatValue(valueA, isInverse)}
                      </div>
                   </div>
                   
@@ -127,17 +174,15 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                      <div className="flex-1 h-3 bg-white/10 rounded-sm overflow-hidden">
                         <div 
                            className={`h-full transition-all duration-500 ${
-                             (bet.metrics.valueB || 0) > (bet.metrics.valueA || 0) 
-                               ? 'bg-[#CCFF00]' 
-                               : 'bg-white/40'
+                             isWinningB ? 'bg-[#CCFF00]' : 'bg-white/40'
                            }`}
-                           style={{ width: `${Math.min(100, ((bet.metrics.valueB || 0) / Math.max((bet.metrics.valueA || 0), (bet.metrics.valueB || 0), 1)) * 100)}%` }}
+                           style={{ width: `${getBarWidth(valueB, valueA)}%` }}
                         ></div>
                      </div>
-                     <div className={`w-8 text-xs font-mono font-bold text-left ${
-                        (bet.metrics.valueB || 0) > (bet.metrics.valueA || 0) ? 'text-[#CCFF00]' : 'text-gray-400'
+                     <div className={`w-10 text-xs font-mono font-bold text-left ${
+                        isWinningB ? 'text-[#CCFF00]' : 'text-gray-400'
                      }`}>
-                       {bet.metrics.valueB}
+                       {formatValue(valueB, isInverse)}
                      </div>
                   </div>
                </div>
@@ -147,40 +192,28 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
            <div className="flex flex-col gap-1 font-mono text-xs text-gray-400">
               <div className="flex items-center gap-2">
                  <span className={`w-2 h-2 rounded-full ${
-                   !bet.metrics || (bet.metrics.valueA || 0) > (bet.metrics.valueB || 0) || (bet.metrics.target && (bet.metrics.valueA || 0) >= bet.metrics.target)
-                     ? 'bg-[#CCFF00]' 
-                     : 'bg-zinc-600'
+                   !bet.metrics || isWinningA ? 'bg-[#CCFF00]' : 'bg-zinc-600'
                  }`}></span>
                  <span className={`${
-                   !bet.metrics || (bet.metrics.valueA || 0) > (bet.metrics.valueB || 0) || (bet.metrics.target && (bet.metrics.valueA || 0) >= bet.metrics.target)
-                     ? 'text-white font-bold' 
-                     : 'text-gray-500'
+                   !bet.metrics || isWinningA ? 'text-white font-bold' : 'text-gray-500'
                  }`}>{sideA}</span>
                  <span className="opacity-50">backs</span>
                  <span className={`${
-                   !bet.metrics || (bet.metrics.valueA || 0) > (bet.metrics.valueB || 0) || (bet.metrics.target && (bet.metrics.valueA || 0) >= bet.metrics.target)
-                     ? 'text-gray-300' 
-                     : 'text-gray-600'
+                   !bet.metrics || isWinningA ? 'text-gray-300' : 'text-gray-600'
                  } uppercase`}>{entityA?.name.split(' ').pop()}</span>
               </div>
               
               {sideB && (
                 <div className="flex items-center gap-2">
                    <span className={`w-2 h-2 rounded-full ${
-                     bet.metrics && (bet.metrics.valueB || 0) > (bet.metrics.valueA || 0) 
-                       ? 'bg-[#CCFF00]' 
-                       : 'bg-zinc-600'
+                     bet.metrics && isWinningB ? 'bg-[#CCFF00]' : 'bg-zinc-600'
                    }`}></span>
                    <span className={`${
-                     bet.metrics && (bet.metrics.valueB || 0) > (bet.metrics.valueA || 0) 
-                       ? 'text-white font-bold' 
-                       : 'text-gray-500'
+                     bet.metrics && isWinningB ? 'text-white font-bold' : 'text-gray-500'
                    }`}>{sideB}</span>
                    <span className="opacity-50">backs</span>
                    <span className={`${
-                     bet.metrics && (bet.metrics.valueB || 0) > (bet.metrics.valueA || 0) 
-                       ? 'text-gray-300' 
-                       : 'text-gray-600'
+                     bet.metrics && isWinningB ? 'text-gray-300' : 'text-gray-600'
                    } uppercase`}>{entityB?.name.split(' ').pop()}</span>
                 </div>
               )}

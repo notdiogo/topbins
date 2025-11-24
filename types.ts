@@ -31,7 +31,7 @@ export interface Bet {
   title: string;
   league: string;
   season: string;
-  type: 'PLAYER_VS_PLAYER' | 'PLAYER_THRESHOLD';
+  type: 'PLAYER_VS_PLAYER' | 'PLAYER_THRESHOLD' | 'TEAM_VS_TEAM';
   
   // The Rules
   criteria: string;
@@ -52,6 +52,8 @@ export interface Bet {
     valueA: number;
     valueB?: number; // Optional for threshold bets
     target?: number; // For threshold bets
+    isInverse?: boolean; // If true, lower value is better (e.g. league position)
+    maxValue?: number; // For scaling (e.g. 20 for league position)
   };
 }
 
@@ -65,4 +67,12 @@ export interface UserStats {
 export interface GenerationResult {
   strategy: string;
   focusPoints: string[];
+}
+
+export interface MonthlyStanding {
+  month: string;
+  year: string;
+  scores: {
+    [participantName: string]: number;
+  };
 }
