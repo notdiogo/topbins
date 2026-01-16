@@ -485,10 +485,10 @@ def update_league_history(content, wins):
     else:
         # Add new month entry before the closing bracket
         print(f"   Adding new {current_month} entry...")
-        # Find LEAGUE_HISTORY array and add before the last ]
-        pattern = r"(export const LEAGUE_HISTORY: MonthlyStanding\[\] = \[.*?)(^\];)"
+        # Find the last } before ]; in LEAGUE_HISTORY and add comma + new entry
+        pattern = r"(export const LEAGUE_HISTORY: MonthlyStanding\[\] = \[.*?})\s*\];"
         replacement = rf"\1,\n  {new_entry}\n];"
-        content = re.sub(pattern, replacement, content, flags=re.DOTALL | re.MULTILINE)
+        content = re.sub(pattern, replacement, content, flags=re.DOTALL)
     
     return content
 

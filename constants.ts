@@ -229,8 +229,7 @@ export const LEAGUE_HISTORY: MonthlyStanding[] = [
       Shiv: 2,
       Mitch: 1
     }
-  }
-,
+  },
   {
     month: 'JAN',
     year: '2026',
@@ -239,7 +238,6 @@ export const LEAGUE_HISTORY: MonthlyStanding[] = [
       Shiv: 1,
       Mitch: 3
     }
-  }
   }
 ];
 
