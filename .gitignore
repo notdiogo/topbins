@@ -34,3 +34,6 @@ dist-ssr
 prisma/*.db
 prisma/*.db-journal
 
+# Cursor
+.cursor
+

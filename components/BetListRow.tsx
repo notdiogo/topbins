@@ -97,7 +97,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
            <div className="flex items-center relative z-10 pl-4">
               {/* Player A Avatar */}
               <div className={`w-16 h-16 rounded-full border-2 overflow-hidden relative z-20 shadow-lg bg-zinc-800 ${
-                bet.metrics && isWinningA ? 'border-[#CCFF00]' : 'border-white/20'
+                !bet.metrics || isWinningA ? 'border-[#CCFF00]' : 'border-white/20'
               }`}>
                  <img src={entityA?.image} alt={entityA?.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
               </div>

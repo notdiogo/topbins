@@ -1,0 +1,130 @@
+{
+  "timestamp": "2026-01-16T13:08:16.319525",
+  "season": "2025-2026",
+  "sources": [
+    "FBref (Selenium)",
+    "FotMob"
+  ],
+  "metrics": {
+    "bet_01": {
+      "label": "Assists",
+      "valueA": 3,
+      "valueB": 8
+    },
+    "bet_02": {
+      "label": "G/A (All Comps)",
+      "valueA": 3,
+      "valueB": 0
+    },
+    "bet_03": {
+      "label": "G/A (All Comps)",
+      "valueA": 3,
+      "valueB": 9
+    },
+    "bet_04": {
+      "label": "Avg Rating",
+      "valueA": 6.83,
+      "valueB": 7.48
+    },
+    "bet_05": {
+      "label": "Non-Pen G/A",
+      "valueA": 5,
+      "target": 20
+    },
+    "bet_06": {
+      "label": "League Position",
+      "valueA": 4,
+      "valueB": 7,
+      "isInverse": true,
+      "maxValue": 20
+    }
+  },
+  "players": {
+    "odegaard": {
+      "name": "Martin \u00d8degaard",
+      "team": "Arsenal",
+      "goals": 1,
+      "assists": 3,
+      "g_a": 4,
+      "source": "FBref (Selenium)"
+    },
+    "bruno": {
+      "name": "Bruno Fernandes",
+      "team": "Manchester Utd",
+      "goals": 5,
+      "assists": 8,
+      "g_a": 13,
+      "source": "FBref (Selenium)"
+    },
+    "zirkzee": {
+      "name": "Joshua Zirkzee",
+      "team": "Manchester Utd",
+      "goals": 2,
+      "assists": 1,
+      "g_a": 3,
+      "source": "FBref (Selenium)"
+    },
+    "madueke": {
+      "name": "Noni Madueke",
+      "team": "Arsenal",
+      "goals": 0,
+      "assists": 0,
+      "g_a": 0,
+      "source": "FBref (Selenium)"
+    },
+    "cherki": {
+      "name": "Rayan Cherki",
+      "team": "Manchester City",
+      "goals": 2,
+      "assists": 7,
+      "g_a": 9,
+      "source": "FBref (Selenium)"
+    },
+    "frimpong": {
+      "name": "Jeremie Frimpong",
+      "team": "Liverpool",
+      "goals": 0,
+      "assists": 1,
+      "g_a": 1,
+      "source": "FBref (Selenium)"
+    },
+    "nunes": {
+      "name": "Matheus Nunes",
+      "team": "Manchester City",
+      "goals": 1,
+      "assists": 3,
+      "g_a": 4,
+      "source": "FBref (Selenium)"
+    },
+    "cunha": {
+      "name": "Matheus Cunha",
+      "team": "Wolves",
+      "goals": 4,
+      "assists": 1,
+      "g_a": 5,
+      "source": "FBref (Selenium)"
+    }
+  },
+  "standings": {
+    "Arsenal": {
+      "position": 1,
+      "points": 49
+    },
+    "Manchester City": {
+      "position": 2,
+      "points": 43
+    },
+    "Liverpool": {
+      "position": 4,
+      "points": 35
+    },
+    "Manchester United": {
+      "position": 7,
+      "points": 32
+    }
+  },
+  "fotmob_ratings": {
+    "frimpong": 6.83,
+    "nunes": 7.48
+  }
+}

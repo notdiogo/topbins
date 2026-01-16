@@ -51,7 +51,7 @@ export const MOCK_BETS: Bet[] = [
     season: '2025-2026',
     type: 'PLAYER_VS_PLAYER',
     criteria: "Straight comparison of total assists in the Premier League.",
-    voidConditions: "Bet void if one player accumulates two months more injury time than the other.",
+    voidConditions: "Bet void if one player accumulates 2 months more injury time than the other.",
     prize: "Winner receives one jersey or teamwear item.",
     status: 'ACTIVE',
     heroImage: "/martin-bruno.png",
@@ -66,8 +66,8 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'Assists',
-      valueA: 1,
-      valueB: 3
+      valueA: 3,
+      valueB: 8
     }
   },
   {
@@ -78,7 +78,7 @@ export const MOCK_BETS: Bet[] = [
     season: '2025-2026',
     type: 'PLAYER_VS_PLAYER',
     criteria: "Most combined Goals + Assists (G/A) across EPL, Carabao Cup, and FA Cup. Minutes played are ignored.",
-    voidConditions: "Bet void if one player accumulates two months more injury time than the other.",
+    voidConditions: "Bet void if one player accumulates 2 months more injury time than the other.",
     prize: "Prize to be decided.",
     status: 'ACTIVE',
     heroImage: "/noni-zirk.png",
@@ -93,7 +93,7 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'G/A (All Comps)',
-      valueA: 0,
+      valueA: 3,
       valueB: 0
     }
   },
@@ -120,8 +120,8 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'G/A (All Comps)',
-      valueA: 0,
-      valueB: 5
+      valueA: 3,
+      valueB: 9
     }
   },
   {
@@ -147,8 +147,8 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'Avg Rating',
-      valueA: 6.6,
-      valueB: 7.5
+      valueA: 6.83,
+      valueB: 7.48
     }
   },
   {
@@ -173,7 +173,7 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'Non-Pen G/A',
-      valueA: 1,
+      valueA: 5,
       target: 20
     }
   },
@@ -200,8 +200,8 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'League Position',
-      valueA: 12,
-      valueB: 10,
+      valueA: 4,
+      valueB: 7,
       isInverse: true,
       maxValue: 20
     }
