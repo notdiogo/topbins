@@ -36,15 +36,6 @@ const PLAYER_IMGS = {
   CUNHA: "/Cunha-avatar.png",
 };
 
-const TEXTURES = {
-  STADIUM_DARK: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=2070&auto=format&fit=crop",
-  CONCRETE: "https://images.unsplash.com/photo-1518091043644-c1d4457512c6?q=80&w=1931&auto=format&fit=crop",
-  NIGHT_CITY: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=2074&auto=format&fit=crop",
-  GRASS_DARK: "https://images.unsplash.com/photo-1589487391730-58f20eb2c308?q=80&w=2074&auto=format&fit=crop",
-};
-
-const FACE_OFF_URL = "https://images.unsplash.com/photo-1574629810360-7efbbe195018?q=80&w=2093&auto=format&fit=crop";
-
 export const MOCK_BETS: Bet[] = [
   {
     id: 'bet_01',
