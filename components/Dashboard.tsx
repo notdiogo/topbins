@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MOCK_BETS } from '../constants';
+import { MOCK_BETS, LAST_UPDATED } from '../constants';
 import { BetListRow } from './BetListRow';
 import { BetModal } from './BetModal';
 import { Bet } from '../types';
@@ -37,7 +37,7 @@ export const Dashboard: React.FC = () => {
            </div>
            <div className="flex items-center gap-2 text-xs font-mono text-gray-500 uppercase tracking-widest">
               <Clock className="w-4 h-4" />
-              Last updated: Mon Nov 24
+              Last updated: {LAST_UPDATED}
            </div>
         </div>
 

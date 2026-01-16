@@ -434,6 +434,27 @@ def calculate_standings(stats, standings):
     return wins
 
 
+def update_last_updated(content):
+    """Update the LAST_UPDATED timestamp in constants.ts."""
+    from datetime import timezone, timedelta
+    
+    # Get current time in EST
+    est = timezone(timedelta(hours=-5))
+    now = datetime.now(est)
+    
+    # Format: "Thu Jan 16, 6:34 PM EST"
+    formatted = now.strftime('%a %b %d, %-I:%M %p EST')
+    
+    print(f"\n🕐 Updating LAST_UPDATED to: {formatted}")
+    
+    # Replace the LAST_UPDATED line
+    pattern = r"export const LAST_UPDATED = '[^']*';"
+    replacement = f"export const LAST_UPDATED = '{formatted}';"
+    
+    content = re.sub(pattern, replacement, content)
+    return content
+
+
 def update_league_history(content, wins):
     """Update LEAGUE_HISTORY with current month's standings."""
     now = datetime.now()
@@ -520,11 +541,15 @@ def main():
         with open(constants_path, 'r') as f:
             content = f.read()
         
+        # Update timestamp
+        content = update_last_updated(content)
+        
+        # Update league history
         content = update_league_history(content, wins)
         
         with open(constants_path, 'w') as f:
             f.write(content)
-        print("   ✅ LEAGUE_HISTORY updated!")
+        print("   ✅ constants.ts updated!")
     
     print("\n" + "=" * 60)
     print("✅ Done!")
