@@ -227,6 +227,16 @@ export const LEAGUE_HISTORY: MonthlyStanding[] = [
       Mitch: 1
     }
   }
+,
+  {
+    month: 'JAN',
+    year: '2026',
+    scores: {
+      Diogo: 3,
+      Shiv: 1,
+      Mitch: 3
+    }
+  }
 ];
 
 export const TECH_SPECS = [

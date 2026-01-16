@@ -321,6 +321,157 @@ def update_bet_metrics_position(content, bet_id, valueA, valueB):
     return new_content
 
 
+# =================================================================
+# BET DEFINITIONS - Who participates in each bet
+# =================================================================
+BETS = [
+    {
+        "id": "bet_01",
+        "type": "pvp",
+        "participants": {"A": ["Mitch"], "B": ["Shiv"]},
+        "metric": "assists",
+        "playerA": "odegaard",
+        "playerB": "bruno",
+        "inverse": False
+    },
+    {
+        "id": "bet_02",
+        "type": "pvp",
+        "participants": {"A": ["Mitch"], "B": ["Shiv"]},
+        "metric": "g_a",
+        "playerA": "zirkzee",
+        "playerB": "madueke",
+        "inverse": False
+    },
+    {
+        "id": "bet_03",
+        "type": "pvp",
+        "participants": {"A": ["Shiv"], "B": ["Diogo"]},
+        "metric": "g_a",
+        "playerA": "zirkzee",
+        "playerB": "cherki",
+        "inverse": False
+    },
+    {
+        "id": "bet_04",
+        "type": "pvp",
+        "participants": {"A": ["Shiv"], "B": ["Diogo"]},
+        "metric": "rating",
+        "playerA": "frimpong",
+        "playerB": "nunes",
+        "inverse": False
+    },
+    {
+        "id": "bet_05",
+        "type": "threshold",
+        "participants": {"A": ["Shiv"], "B": ["Diogo", "Mitch"]},
+        "metric": "g_a",
+        "player": "cunha",
+        "target": 20
+    },
+    {
+        "id": "bet_06",
+        "type": "position",
+        "participants": {"A": ["Mitch"], "B": ["Shiv"]},
+        "teamA": "Liverpool",
+        "teamB": "Manchester United",
+        "inverse": True  # Lower position is better
+    }
+]
+
+
+def calculate_standings(stats, standings):
+    """Calculate current wins for each participant based on bet metrics."""
+    wins = {"Diogo": 0, "Shiv": 0, "Mitch": 0}
+    
+    for bet in BETS:
+        winner_side = None
+        
+        if bet["type"] == "pvp":
+            # Player vs Player
+            if bet["metric"] == "rating":
+                valueA = FOTMOB_RATINGS.get(bet["playerA"], 0)
+                valueB = FOTMOB_RATINGS.get(bet["playerB"], 0)
+            else:
+                metric = bet["metric"]
+                valueA = stats.get(bet["playerA"], {}).get(metric, 0)
+                valueB = stats.get(bet["playerB"], {}).get(metric, 0)
+            
+            if valueA == valueB:
+                continue  # Draw
+            
+            if bet.get("inverse"):
+                winner_side = "A" if valueA < valueB else "B"
+            else:
+                winner_side = "A" if valueA > valueB else "B"
+                
+        elif bet["type"] == "threshold":
+            # Player threshold bet
+            metric = bet["metric"]
+            value = stats.get(bet["player"], {}).get(metric, 0)
+            target = bet["target"]
+            
+            winner_side = "A" if value >= target else "B"
+            
+        elif bet["type"] == "position":
+            # Team position bet
+            posA = standings.get(bet["teamA"], {}).get("position", 20)
+            posB = standings.get(bet["teamB"], {}).get("position", 20)
+            
+            if posA == posB:
+                continue  # Draw
+            
+            # Lower position is better (inverse)
+            winner_side = "A" if posA < posB else "B"
+        
+        # Award wins to participants on winning side
+        if winner_side:
+            for participant in bet["participants"][winner_side]:
+                wins[participant] += 1
+                
+        print(f"   {bet['id']}: Side {winner_side} wins → {bet['participants'].get(winner_side, [])}")
+    
+    return wins
+
+
+def update_league_history(content, wins):
+    """Update LEAGUE_HISTORY with current month's standings."""
+    now = datetime.now()
+    current_month = now.strftime('%b').upper()[:3]  # JAN, FEB, etc.
+    current_year = now.strftime('%Y')
+    
+    print(f"\n📈 Updating LEAGUE_HISTORY for {current_month} {current_year}...")
+    print(f"   Current standings: Diogo={wins['Diogo']}, Shiv={wins['Shiv']}, Mitch={wins['Mitch']}")
+    
+    # Check if current month already exists
+    month_pattern = rf"\{{\s*month:\s*'{current_month}'.*?year:\s*'{current_year}'.*?\}}"
+    existing_match = re.search(month_pattern, content, re.DOTALL)
+    
+    new_entry = f"""{{
+    month: '{current_month}',
+    year: '{current_year}',
+    scores: {{
+      Diogo: {wins['Diogo']},
+      Shiv: {wins['Shiv']},
+      Mitch: {wins['Mitch']}
+    }}
+  }}"""
+    
+    if existing_match:
+        # Update existing month entry
+        print(f"   Updating existing {current_month} entry...")
+        content = re.sub(month_pattern, new_entry, content, flags=re.DOTALL)
+    else:
+        # Add new month entry before the closing bracket
+        print(f"   Adding new {current_month} entry...")
+        # Find LEAGUE_HISTORY array and add before the last ]
+        pattern = r"(export const LEAGUE_HISTORY: MonthlyStanding\[\] = \[.*?)(^\];)"
+        replacement = rf"\1,\n  {new_entry}\n];"
+        content = re.sub(pattern, replacement, content, flags=re.DOTALL | re.MULTILINE)
+    
+    return content
+
+
 def main():
     print("=" * 60)
     print("⚽ TopBins Auto Stats Update")
@@ -353,8 +504,27 @@ def main():
         json.dump(output, f, indent=2)
     print(f"\n💾 Saved raw data to {json_path}")
     
-    # Update constants.ts
+    # Update constants.ts with bet metrics
     update_constants_ts(stats, standings)
+    
+    # Calculate participant standings
+    print("\n🏆 Calculating bet standings...")
+    wins = calculate_standings(stats, standings)
+    
+    # Update LEAGUE_HISTORY with current month
+    constants_path = "constants.ts"
+    if not os.path.exists(constants_path):
+        constants_path = "../constants.ts"
+    
+    if os.path.exists(constants_path):
+        with open(constants_path, 'r') as f:
+            content = f.read()
+        
+        content = update_league_history(content, wins)
+        
+        with open(constants_path, 'w') as f:
+            f.write(content)
+        print("   ✅ LEAGUE_HISTORY updated!")
     
     print("\n" + "=" * 60)
     print("✅ Done!")
