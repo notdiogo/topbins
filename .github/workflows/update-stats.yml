@@ -1,0 +1,52 @@
+name: Update Player Stats
+
+on:
+  schedule:
+    # Runs daily at 6:00 AM UTC (adjust as needed)
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Chrome for Selenium
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - name: Install Python dependencies
+        run: |
+          pip install soccerdata seleniumbase pandas requests
+
+      - name: Fetch latest stats
+        run: |
+          cd scripts
+          python3 fetch_and_update.py
+        env:
+          CI: true
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --quiet constants.ts || echo "changes=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add constants.ts scripts/latest_stats.json
+          git commit -m "📊 Auto-update stats - $(date +'%Y-%m-%d')"
+          git push
