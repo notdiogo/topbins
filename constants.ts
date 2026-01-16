@@ -78,8 +78,8 @@ export const MOCK_BETS: Bet[] = [
     heroImage: "/noni-zirk.png",
     useCustomHero: true,
     participants: [
-      { name: 'Mitch', side: 'A' },
-      { name: 'Shiv', side: 'B' }
+      { name: 'Shiv', side: 'A' },
+      { name: 'Mitch', side: 'B' }
     ],
     entities: [
       { name: 'Joshua Zirkzee', type: 'PLAYER', side: 'A', image: PLAYER_IMGS.ZIRKZEE },

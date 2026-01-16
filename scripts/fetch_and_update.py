@@ -243,9 +243,9 @@ def update_constants_ts(stats, standings):
     madueke_ga = stats.get("madueke", {}).get("g_a", 0)
     content = update_bet_metrics(content, "bet_02",
                                  label="G/A (All Comps)",
-                                 valueA=madueke_ga,  # Note: Noni is A in this bet
-                                 valueB=zirkzee_ga)
-    print(f"   bet_02: G/A - Noni {madueke_ga}, Zirkzee {zirkzee_ga}")
+                                 valueA=zirkzee_ga,  # Zirkzee is A (Shiv backs)
+                                 valueB=madueke_ga)  # Madueke is B (Mitch backs)
+    print(f"   bet_02: G/A - Zirkzee {zirkzee_ga}, Madueke {madueke_ga}")
     
     # Update bet_03: Zirkzee vs Cherki (G/A)
     cherki_ga = stats.get("cherki", {}).get("g_a", 0)
@@ -337,7 +337,7 @@ BETS = [
     {
         "id": "bet_02",
         "type": "pvp",
-        "participants": {"A": ["Mitch"], "B": ["Shiv"]},
+        "participants": {"A": ["Shiv"], "B": ["Mitch"]},  # Shiv backs Zirkzee, Mitch backs Madueke
         "metric": "g_a",
         "playerA": "zirkzee",
         "playerB": "madueke",
