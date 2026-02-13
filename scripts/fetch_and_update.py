@@ -293,7 +293,9 @@ def update_constants_ts(stats, standings):
 def update_bet_metrics(content, bet_id, label, valueA, valueB):
     """Update metrics for a standard A vs B bet."""
     # Find the bet block and update metrics within it
-    pattern = rf"(id:\s*['\"]?{bet_id}['\"]?.*?metrics:\s*\{{[^}}]*?label:\s*['\"]){label}(['\"].*?valueA:\s*)\d+\.?\d*(.*?valueB:\s*)\d+\.?\d*"
+    # Use re.escape on label to handle special regex chars like parentheses in "G/A (All Comps)"
+    escaped_label = re.escape(label)
+    pattern = rf"(id:\s*['\"]?{bet_id}['\"]?.*?metrics:\s*\{{[^}}]*?label:\s*['\"]){escaped_label}(['\"].*?valueA:\s*)\d+\.?\d*(.*?valueB:\s*)\d+\.?\d*"
     
     replacement = rf"\g<1>{label}\g<2>{valueA}\g<3>{valueB}"
     
@@ -303,7 +305,8 @@ def update_bet_metrics(content, bet_id, label, valueA, valueB):
 
 def update_bet_metrics_single(content, bet_id, label, valueA, target):
     """Update metrics for a single player bet with target."""
-    pattern = rf"(id:\s*['\"]?{bet_id}['\"]?.*?metrics:\s*\{{[^}}]*?label:\s*['\"]){label}(['\"].*?valueA:\s*)\d+\.?\d*(.*?target:\s*)\d+"
+    escaped_label = re.escape(label)
+    pattern = rf"(id:\s*['\"]?{bet_id}['\"]?.*?metrics:\s*\{{[^}}]*?label:\s*['\"]){escaped_label}(['\"].*?valueA:\s*)\d+\.?\d*(.*?target:\s*)\d+"
     
     replacement = rf"\g<1>{label}\g<2>{valueA}\g<3>{target}"
     
@@ -506,6 +509,21 @@ def main():
     stats = get_fbref_stats_selenium()
     time.sleep(1)
     standings = get_fotmob_standings()
+    
+    # Check if FBref scrape returned actual data (not all zeros)
+    has_fbref_data = any(
+        s.get("goals", 0) > 0 or s.get("assists", 0) > 0
+        for s in stats.values()
+    )
+    
+    if not has_fbref_data:
+        print("\n⚠️  FBref scrape returned no data — skipping stats update to avoid zeroing out values.")
+        print("   This usually means FBref blocked the request or the page layout changed.")
+        print("   Existing constants.ts values will be preserved.")
+        print("\n" + "=" * 60)
+        print("⚠️  Skipped (no data)")
+        print("=" * 60)
+        return
     
     # Save raw data
     output = {
