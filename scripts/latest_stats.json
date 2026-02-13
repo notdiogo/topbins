@@ -1,12 +1,86 @@
 {
-  "timestamp": "2026-02-13T09:07:29.531569",
+  "timestamp": "2026-02-13T09:13:41.429854",
   "season": "2025-2026",
   "sources": [
     "FBref (Selenium)",
     "FotMob"
   ],
-  "players": {},
-  "standings": {},
+  "players": {
+    "odegaard": {
+      "name": "Martin \u00d8degaard",
+      "team": "Arsenal",
+      "goals": 1,
+      "assists": 4,
+      "g_a": 5
+    },
+    "bruno": {
+      "name": "Bruno Fernandes",
+      "team": "Manchester Utd",
+      "goals": 6,
+      "assists": 12,
+      "g_a": 18
+    },
+    "zirkzee": {
+      "name": "Joshua Zirkzee",
+      "team": "Manchester Utd",
+      "goals": 2,
+      "assists": 1,
+      "g_a": 3
+    },
+    "madueke": {
+      "name": "Noni Madueke",
+      "team": "Arsenal",
+      "goals": 2,
+      "assists": 1,
+      "g_a": 3
+    },
+    "cherki": {
+      "name": "Rayan Cherki",
+      "team": "Manchester City",
+      "goals": 3,
+      "assists": 7,
+      "g_a": 10
+    },
+    "frimpong": {
+      "name": "Jeremie Frimpong",
+      "team": "Liverpool",
+      "goals": 0,
+      "assists": 1,
+      "g_a": 1
+    },
+    "nunes": {
+      "name": "Matheus Nunes",
+      "team": "Manchester City",
+      "goals": 1,
+      "assists": 4,
+      "g_a": 5
+    },
+    "cunha": {
+      "name": "Matheus Cunha",
+      "team": "Wolves",
+      "goals": 6,
+      "assists": 2,
+      "g_a": 8
+    }
+  },
+  "standings": {
+    "Arsenal": {
+      "position": 1,
+      "points": 57
+    },
+    "Manchester City": {
+      "position": 2,
+      "points": 53
+    },
+    "Liverpool": {
+      "position": 6,
+      "points": 42
+    },
+    "Wolves": {
+      "position": 20,
+      "points": 9
+    }
+  },
   "fotmob_ratings": {
     "frimpong": 6.8,
     "nunes": 7.4

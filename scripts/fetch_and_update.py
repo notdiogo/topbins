@@ -179,40 +179,107 @@ def get_fbref_stats_selenium():
     return results
 
 
-def get_fotmob_standings():
-    """Fetch league standings from FotMob."""
-    print("\n🔄 Connecting to FotMob...")
+def get_standings_fbref_selenium():
+    """Fetch EPL standings from FBref using Selenium."""
+    print("\n🔄 Fetching EPL standings from FBref...")
     sys.stdout.flush()
     
     standings = {}
+    # Map canonical names to search aliases (handles FBref using "Utd" vs "United" etc.)
+    teams_to_find = {
+        "Liverpool": ["liverpool"],
+        "Manchester United": ["manchester united", "manchester utd", "man united", "man utd"],
+        "Arsenal": ["arsenal"],
+        "Manchester City": ["manchester city", "man city"],
+        "Wolves": ["wolves", "wolverhampton"],
+    }
     
     try:
-        fotmob = sd.FotMob(leagues="ENG-Premier League", seasons=SEASON)
+        from seleniumbase import SB
+        import pandas as pd
+        from io import StringIO
         
-        print("   📊 Fetching league table...")
-        table = fotmob.read_league_table()
-        df = table.reset_index()
-        
-        teams_to_find = ["Liverpool", "Manchester United", "Arsenal", "Manchester City", "Wolves"]
-        
-        for idx, row in df.iterrows():
-            team_name = str(row.get('team', ''))
-            position = idx + 1
-            pts = int(row.get('Pts', 0) or 0)
+        with SB(uc=True, headless=True) as sb:
+            url = 'https://fbref.com/en/comps/9/Premier-League-Stats'
+            print(f"   Opening: {url}")
+            sb.open(url)
             
-            for team in teams_to_find:
-                if team.lower() in team_name.lower() or team_name.lower() in team.lower():
-                    standings[team] = {"position": position, "points": pts}
-                    print(f"   ✅ {team}: Position {position} ({pts} pts)")
-                    break
+            print("   Waiting for page to load...")
+            time.sleep(8)
+            
+            html = sb.get_page_source()
+            tables = pd.read_html(StringIO(html))
+            print(f"   Found {len(tables)} tables")
+            
+            # The standings table typically has 20 rows (20 teams) and columns like Rk, Squad, MP, W, D, L, Pts
+            for table in tables:
+                if len(table) == 20 or (len(table) >= 18 and len(table) <= 22):
+                    cols = list(table.columns)
+                    # Flatten MultiIndex if needed
+                    if isinstance(table.columns, pd.MultiIndex):
+                        table.columns = [' '.join(str(c) for c in col).strip() for col in table.columns]
+                        cols = list(table.columns)
                     
+                    # Find squad/team column and points column
+                    squad_col = next((c for c in cols if 'Squad' in c or 'Team' in c), None)
+                    rk_col = next((c for c in cols if 'Rk' in c), None)
+                    pts_col = next((c for c in cols if 'Pts' in c), None)
+                    
+                    if not squad_col:
+                        continue
+                    
+                    print(f"   📊 Found standings table with columns: {', '.join(cols[:8])}")
+                    
+                    for idx, row in table.iterrows():
+                        team_name = str(row[squad_col]).lower()
+                        
+                        try:
+                            position = int(float(row[rk_col])) if rk_col and pd.notna(row[rk_col]) else idx + 1
+                        except:
+                            position = idx + 1
+                        
+                        try:
+                            pts = int(float(row[pts_col])) if pts_col and pd.notna(row[pts_col]) else 0
+                        except:
+                            pts = 0
+                        
+                        for canonical, aliases in teams_to_find.items():
+                            if any(alias in team_name for alias in aliases):
+                                standings[canonical] = {"position": position, "points": pts}
+                                print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
+                                break
+                    
+                    if standings:
+                        break
+    
     except Exception as e:
-        print(f"   ❌ FotMob error: {e}")
+        print(f"   ❌ FBref standings error: {e}")
+    
+    # Fallback to FotMob if FBref didn't work
+    if not standings:
+        print("   Trying FotMob as fallback...")
+        try:
+            fotmob = sd.FotMob(leagues="ENG-Premier League", seasons=SEASON)
+            table = fotmob.read_league_table()
+            df = table.reset_index()
+            
+            for idx, row in df.iterrows():
+                team_name = str(row.get('team', '')).lower()
+                position = idx + 1
+                pts = int(row.get('Pts', 0) or 0)
+                
+                for canonical, aliases in teams_to_find.items():
+                    if any(alias in team_name for alias in aliases):
+                        standings[canonical] = {"position": position, "points": pts}
+                        print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
+                        break
+        except Exception as e:
+            print(f"   ❌ FotMob fallback error: {e}")
     
     return standings
 
 
-def update_constants_ts(stats, standings):
+def update_constants_ts(stats, standings, has_fbref_data=True):
     """Update the constants.ts file with new stats."""
     print("\n📝 Updating constants.ts...")
     
@@ -229,33 +296,44 @@ def update_constants_ts(stats, standings):
     
     original_content = content
     
-    # Update bet_01: Martin vs Bruno (Assists)
-    odegaard_assists = stats.get("odegaard", {}).get("assists", 0)
-    bruno_assists = stats.get("bruno", {}).get("assists", 0)
-    content = update_bet_metrics(content, "bet_01", 
-                                 label="Assists",
-                                 valueA=odegaard_assists, 
-                                 valueB=bruno_assists)
-    print(f"   bet_01: Assists - Ødegaard {odegaard_assists}, Bruno {bruno_assists}")
+    if has_fbref_data:
+        # Update bet_01: Martin vs Bruno (Assists)
+        odegaard_assists = stats.get("odegaard", {}).get("assists", 0)
+        bruno_assists = stats.get("bruno", {}).get("assists", 0)
+        content = update_bet_metrics(content, "bet_01", 
+                                     label="Assists",
+                                     valueA=odegaard_assists, 
+                                     valueB=bruno_assists)
+        print(f"   bet_01: Assists - Ødegaard {odegaard_assists}, Bruno {bruno_assists}")
+        
+        # Update bet_02: Zirkzee vs Noni (G/A)
+        zirkzee_ga = stats.get("zirkzee", {}).get("g_a", 0)
+        madueke_ga = stats.get("madueke", {}).get("g_a", 0)
+        content = update_bet_metrics(content, "bet_02",
+                                     label="G/A (All Comps)",
+                                     valueA=zirkzee_ga,  # Zirkzee is A (Shiv backs)
+                                     valueB=madueke_ga)  # Madueke is B (Mitch backs)
+        print(f"   bet_02: G/A - Zirkzee {zirkzee_ga}, Madueke {madueke_ga}")
+        
+        # Update bet_03: Zirkzee vs Cherki (G/A)
+        cherki_ga = stats.get("cherki", {}).get("g_a", 0)
+        content = update_bet_metrics(content, "bet_03",
+                                     label="G/A (All Comps)",
+                                     valueA=zirkzee_ga,
+                                     valueB=cherki_ga)
+        print(f"   bet_03: G/A - Zirkzee {zirkzee_ga}, Cherki {cherki_ga}")
+        
+        # Update bet_05: Cunha (Non-Pen G/A)
+        cunha_ga = stats.get("cunha", {}).get("g_a", 0)
+        content = update_bet_metrics_single(content, "bet_05",
+                                            label="Non-Pen G/A",
+                                            valueA=cunha_ga,
+                                            target=20)
+        print(f"   bet_05: Non-Pen G/A - Cunha {cunha_ga}")
+    else:
+        print("   ⏭️  Skipping player bets (bet_01–bet_05) — no FBref data")
     
-    # Update bet_02: Zirkzee vs Noni (G/A)
-    zirkzee_ga = stats.get("zirkzee", {}).get("g_a", 0)
-    madueke_ga = stats.get("madueke", {}).get("g_a", 0)
-    content = update_bet_metrics(content, "bet_02",
-                                 label="G/A (All Comps)",
-                                 valueA=zirkzee_ga,  # Zirkzee is A (Shiv backs)
-                                 valueB=madueke_ga)  # Madueke is B (Mitch backs)
-    print(f"   bet_02: G/A - Zirkzee {zirkzee_ga}, Madueke {madueke_ga}")
-    
-    # Update bet_03: Zirkzee vs Cherki (G/A)
-    cherki_ga = stats.get("cherki", {}).get("g_a", 0)
-    content = update_bet_metrics(content, "bet_03",
-                                 label="G/A (All Comps)",
-                                 valueA=zirkzee_ga,
-                                 valueB=cherki_ga)
-    print(f"   bet_03: G/A - Zirkzee {zirkzee_ga}, Cherki {cherki_ga}")
-    
-    # Update bet_04: Frimpong vs Nunes (Rating)
+    # bet_04 always updates (uses manual FOTMOB_RATINGS, not FBref)
     frimpong_rating = FOTMOB_RATINGS.get("frimpong", 0)
     nunes_rating = FOTMOB_RATINGS.get("nunes", 0)
     content = update_bet_metrics(content, "bet_04",
@@ -264,21 +342,16 @@ def update_constants_ts(stats, standings):
                                  valueB=nunes_rating)
     print(f"   bet_04: Rating - Frimpong {frimpong_rating}, Nunes {nunes_rating}")
     
-    # Update bet_05: Cunha (Non-Pen G/A)
-    cunha_ga = stats.get("cunha", {}).get("g_a", 0)
-    content = update_bet_metrics_single(content, "bet_05",
-                                        label="Non-Pen G/A",
-                                        valueA=cunha_ga,
-                                        target=20)
-    print(f"   bet_05: Non-Pen G/A - Cunha {cunha_ga}")
-    
-    # Update bet_06: Liverpool vs United (League Position)
+    # bet_06 always updates if we have standings
     liverpool_pos = standings.get("Liverpool", {}).get("position", 0)
     united_pos = standings.get("Manchester United", {}).get("position", 0)
-    content = update_bet_metrics_position(content, "bet_06",
-                                          valueA=liverpool_pos,
-                                          valueB=united_pos)
-    print(f"   bet_06: Position - Liverpool {liverpool_pos}, United {united_pos}")
+    if liverpool_pos > 0 or united_pos > 0:
+        content = update_bet_metrics_position(content, "bet_06",
+                                              valueA=liverpool_pos,
+                                              valueB=united_pos)
+        print(f"   bet_06: Position - Liverpool {liverpool_pos}, United {united_pos}")
+    else:
+        print(f"   bet_06: ⏭️  Skipping — no standings data")
     
     if content != original_content:
         with open(constants_path, 'w') as f:
@@ -468,7 +541,8 @@ def update_league_history(content, wins):
     print(f"   Current standings: Diogo={wins['Diogo']}, Shiv={wins['Shiv']}, Mitch={wins['Mitch']}")
     
     # Check if current month already exists
-    month_pattern = rf"\{{\s*month:\s*'{current_month}'.*?year:\s*'{current_year}'.*?\}}"
+    # Match the full entry including both closing braces: scores: {...} and the outer }
+    month_pattern = rf"\{{\s*month:\s*'{current_month}'.*?year:\s*'{current_year}'.*?\}}\s*\}}"
     existing_match = re.search(month_pattern, content, re.DOTALL)
     
     new_entry = f"""{{
@@ -488,8 +562,8 @@ def update_league_history(content, wins):
     else:
         # Add new month entry before the closing bracket
         print(f"   Adding new {current_month} entry...")
-        # Find the last } before ]; in LEAGUE_HISTORY and add comma + new entry
-        pattern = r"(export const LEAGUE_HISTORY: MonthlyStanding\[\] = \[.*?})\s*\];"
+        # Find the last }} (inner scores + outer entry) before ]; in LEAGUE_HISTORY
+        pattern = r"(export const LEAGUE_HISTORY: MonthlyStanding\[\] = \[.*?\}\s*\})\s*\];"
         replacement = rf"\1,\n  {new_entry}\n];"
         content = re.sub(pattern, replacement, content, flags=re.DOTALL)
     
@@ -508,22 +582,24 @@ def main():
     # Fetch stats
     stats = get_fbref_stats_selenium()
     time.sleep(1)
-    standings = get_fotmob_standings()
+    standings = get_standings_fbref_selenium()
     
-    # Check if FBref scrape returned actual data (not all zeros)
+    # Check if FBref scrape returned actual player data (not all zeros)
     has_fbref_data = any(
         s.get("goals", 0) > 0 or s.get("assists", 0) > 0
         for s in stats.values()
     )
+    has_standings_data = bool(standings)
     
-    if not has_fbref_data:
-        print("\n⚠️  FBref scrape returned no data — skipping stats update to avoid zeroing out values.")
-        print("   This usually means FBref blocked the request or the page layout changed.")
-        print("   Existing constants.ts values will be preserved.")
+    if not has_fbref_data and not has_standings_data:
+        print("\n⚠️  No data from any source — skipping all updates.")
         print("\n" + "=" * 60)
         print("⚠️  Skipped (no data)")
         print("=" * 60)
         return
+    
+    if not has_fbref_data:
+        print("\n⚠️  FBref player stats scrape returned no data — will skip player bets but still update standings.")
     
     # Save raw data
     output = {
@@ -543,8 +619,8 @@ def main():
         json.dump(output, f, indent=2)
     print(f"\n💾 Saved raw data to {json_path}")
     
-    # Update constants.ts with bet metrics
-    update_constants_ts(stats, standings)
+    # Update constants.ts with bet metrics (only update what we have data for)
+    update_constants_ts(stats, standings, has_fbref_data)
     
     # Calculate participant standings
     print("\n🏆 Calculating bet standings...")

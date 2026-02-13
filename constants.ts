@@ -2,7 +2,7 @@
 import { NavItem, SectionId, Bet, UserStats, MonthlyStanding } from './types';
 
 // Auto-updated by fetch_and_update.py
-export const LAST_UPDATED = 'Fri Feb 13, 9:07 AM EST';
+export const LAST_UPDATED = 'Fri Feb 13, 9:13 AM EST';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'HQ', id: SectionId.HOME },
@@ -194,8 +194,8 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'League Position',
-      valueA: 0,
-      valueB: 0,
+      valueA: 6,
+      valueB: 4,
       isInverse: true,
       maxValue: 20
     }
@@ -235,7 +235,7 @@ export const LEAGUE_HISTORY: MonthlyStanding[] = [
     year: '2026',
     scores: {
       Diogo: 3,
-      Shiv: 1,
+      Shiv: 2,
       Mitch: 1
     }
   }
