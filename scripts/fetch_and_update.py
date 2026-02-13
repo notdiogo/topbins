@@ -17,6 +17,18 @@ import time
 import sys
 warnings.filterwarnings('ignore')
 
+# ------------------------------------------------------------------
+# Paths — always resolve relative to this script's location so it
+# works regardless of the current working directory (repo root,
+# scripts/, or anywhere else).
+# ------------------------------------------------------------------
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SCRIPT_DIR)
+CONSTANTS_PATH = os.path.join(PROJECT_ROOT, "constants.ts")
+LATEST_STATS_PATH = os.path.join(SCRIPT_DIR, "latest_stats.json")
+
+IS_CI = os.environ.get("CI") == "true"
+
 # Current season
 SEASON = "2025-2026"
 
@@ -85,217 +97,256 @@ BET_METRICS = {
     "bet_06": {"type": "position", "teamA": "Liverpool", "teamB": "Manchester United"},
 }
 
+# Teams we care about for standings
+TEAMS_TO_FIND = {
+    "Liverpool": ["liverpool"],
+    "Manchester United": ["manchester united", "manchester utd", "man united", "man utd"],
+    "Arsenal": ["arsenal"],
+    "Manchester City": ["manchester city", "man city"],
+    "Wolves": ["wolves", "wolverhampton"],
+}
+
+
+def _parse_stats_table(table):
+    """Extract player stats from a pandas DataFrame (works for both Selenium and soccerdata)."""
+    import pandas as pd
+
+    results = {}
+
+    if isinstance(table.columns, pd.MultiIndex):
+        table.columns = [' '.join(str(c) for c in col).strip() for col in table.columns]
+
+    cols = list(table.columns)
+    player_col = next((c for c in cols if 'Player' in c or 'player' in c), None)
+    gls_col = next((c for c in cols if c.endswith('Gls') or c == 'Gls' or 'goal' in c.lower()), None)
+    ast_col = next((c for c in cols if c.endswith('Ast') or c == 'Ast' or 'assist' in c.lower()), None)
+
+    if not player_col:
+        return results
+
+    for key, info in PLAYERS.items():
+        found = False
+        for search in info["search"]:
+            mask = table[player_col].astype(str).str.contains(search, case=False, na=False)
+            matches = table[mask]
+            if len(matches) > 0:
+                row = matches.iloc[0]
+                try:
+                    goals = int(float(row[gls_col])) if gls_col and pd.notna(row[gls_col]) else 0
+                except (ValueError, TypeError):
+                    goals = 0
+                try:
+                    assists = int(float(row[ast_col])) if ast_col and pd.notna(row[ast_col]) else 0
+                except (ValueError, TypeError):
+                    assists = 0
+
+                results[key] = {
+                    "name": info["name"],
+                    "team": info["team"],
+                    "goals": goals,
+                    "assists": assists,
+                    "g_a": goals + assists,
+                }
+                print(f"   ✅ {info['name']}: {goals}G, {assists}A")
+                found = True
+                break
+
+        if not found:
+            results[key] = {
+                "name": info["name"],
+                "team": info["team"],
+                "goals": 0,
+                "assists": 0,
+                "g_a": 0,
+            }
+            print(f"   ⚠️ {info['name']}: Not found")
+
+    return results
+
 
 def get_fbref_stats_selenium():
     """Fetch player stats from FBref using Selenium."""
-    print("🔄 Connecting to FBref via Selenium...")
+    print("🔄 Fetching player stats via Selenium...")
     sys.stdout.flush()
-    
-    results = {}
-    
+
     try:
         from seleniumbase import SB
         import pandas as pd
         from io import StringIO
-        
-        with SB(uc=True, headless=True) as sb:
+
+        # In CI, skip uc (undetected-chrome) mode — it patches the
+        # Chrome binary and is fragile on cloud runners.  Regular
+        # headless mode works fine because FBref doesn't block simple
+        # headless requests from GitHub Actions IPs (yet).
+        sb_kwargs = {"headless": True}
+        if not IS_CI:
+            sb_kwargs["uc"] = True
+
+        with SB(**sb_kwargs) as sb:
             url = 'https://fbref.com/en/comps/9/stats/Premier-League-Stats'
             print(f"   Opening: {url}")
             sb.open(url)
-            
-            print("   Waiting for page to load...")
-            time.sleep(8)
-            
+
+            wait_time = 12 if IS_CI else 8
+            print(f"   Waiting {wait_time}s for page to load...")
+            sys.stdout.flush()
+            time.sleep(wait_time)
+
             html = sb.get_page_source()
             tables = pd.read_html(StringIO(html))
             print(f"   Found {len(tables)} tables")
-            
+
             for table in tables:
                 if len(table) > 100:
                     print(f"   Processing table with {len(table)} rows")
-                    
-                    if isinstance(table.columns, pd.MultiIndex):
-                        table.columns = [' '.join(str(c) for c in col).strip() for col in table.columns]
-                    
-                    cols = list(table.columns)
-                    player_col = next((c for c in cols if 'Player' in c), None)
-                    gls_col = next((c for c in cols if c.endswith('Gls') or c == 'Gls'), None)
-                    ast_col = next((c for c in cols if c.endswith('Ast') or c == 'Ast'), None)
-                    
-                    if not player_col:
-                        continue
-                    
-                    for key, info in PLAYERS.items():
-                        found = False
-                        for search in info["search"]:
-                            mask = table[player_col].astype(str).str.contains(search, case=False, na=False)
-                            matches = table[mask]
-                            if len(matches) > 0:
-                                row = matches.iloc[0]
-                                try:
-                                    goals = int(float(row[gls_col])) if gls_col and pd.notna(row[gls_col]) else 0
-                                except:
-                                    goals = 0
-                                try:
-                                    assists = int(float(row[ast_col])) if ast_col and pd.notna(row[ast_col]) else 0
-                                except:
-                                    assists = 0
-                                
-                                results[key] = {
-                                    "name": info["name"],
-                                    "team": info["team"],
-                                    "goals": goals,
-                                    "assists": assists,
-                                    "g_a": goals + assists,
-                                }
-                                print(f"   ✅ {info['name']}: {goals}G, {assists}A")
-                                found = True
-                                break
-                        
-                        if not found:
-                            results[key] = {
-                                "name": info["name"],
-                                "team": info["team"],
-                                "goals": 0,
-                                "assists": 0,
-                                "g_a": 0,
-                            }
-                            print(f"   ⚠️ {info['name']}: Not found")
-                    
-                    break
-                    
+                    results = _parse_stats_table(table)
+                    if results:
+                        return results
+
     except Exception as e:
         print(f"   ❌ Selenium error: {e}")
-        for key, info in PLAYERS.items():
-            if key not in results:
-                results[key] = {
-                    "name": info["name"],
-                    "team": info["team"],
-                    "goals": 0,
-                    "assists": 0,
-                    "g_a": 0,
-                }
-    
-    return results
+        sys.stdout.flush()
+
+    return {}
+
+
+def get_fbref_stats_soccerdata():
+    """Fallback: fetch stats via soccerdata's FBref reader (no browser needed)."""
+    print("🔄 Fetching player stats via soccerdata FBref reader (fallback)...")
+    sys.stdout.flush()
+
+    try:
+        fbref = sd.FBref(leagues="ENG-Premier League", seasons=SEASON)
+        stats_df = fbref.read_player_season_stats(stat_type="standard")
+        stats_df = stats_df.reset_index()
+
+        results = _parse_stats_table(stats_df)
+        if results:
+            return results
+    except Exception as e:
+        print(f"   ❌ soccerdata FBref error: {e}")
+        sys.stdout.flush()
+
+    return {}
 
 
 def get_standings_fbref_selenium():
     """Fetch EPL standings from FBref using Selenium."""
-    print("\n🔄 Fetching EPL standings from FBref...")
+    print("\n🔄 Fetching EPL standings via Selenium...")
     sys.stdout.flush()
-    
+
     standings = {}
-    # Map canonical names to search aliases (handles FBref using "Utd" vs "United" etc.)
-    teams_to_find = {
-        "Liverpool": ["liverpool"],
-        "Manchester United": ["manchester united", "manchester utd", "man united", "man utd"],
-        "Arsenal": ["arsenal"],
-        "Manchester City": ["manchester city", "man city"],
-        "Wolves": ["wolves", "wolverhampton"],
-    }
-    
+
     try:
         from seleniumbase import SB
         import pandas as pd
         from io import StringIO
-        
-        with SB(uc=True, headless=True) as sb:
+
+        sb_kwargs = {"headless": True}
+        if not IS_CI:
+            sb_kwargs["uc"] = True
+
+        with SB(**sb_kwargs) as sb:
             url = 'https://fbref.com/en/comps/9/Premier-League-Stats'
             print(f"   Opening: {url}")
             sb.open(url)
-            
-            print("   Waiting for page to load...")
-            time.sleep(8)
-            
+
+            wait_time = 12 if IS_CI else 8
+            print(f"   Waiting {wait_time}s for page to load...")
+            sys.stdout.flush()
+            time.sleep(wait_time)
+
             html = sb.get_page_source()
             tables = pd.read_html(StringIO(html))
             print(f"   Found {len(tables)} tables")
-            
-            # The standings table typically has 20 rows (20 teams) and columns like Rk, Squad, MP, W, D, L, Pts
+
+            # The standings table typically has 20 rows (20 teams)
             for table in tables:
-                if len(table) == 20 or (len(table) >= 18 and len(table) <= 22):
+                if len(table) >= 18 and len(table) <= 22:
                     cols = list(table.columns)
-                    # Flatten MultiIndex if needed
                     if isinstance(table.columns, pd.MultiIndex):
                         table.columns = [' '.join(str(c) for c in col).strip() for col in table.columns]
                         cols = list(table.columns)
-                    
-                    # Find squad/team column and points column
+
                     squad_col = next((c for c in cols if 'Squad' in c or 'Team' in c), None)
                     rk_col = next((c for c in cols if 'Rk' in c), None)
                     pts_col = next((c for c in cols if 'Pts' in c), None)
-                    
+
                     if not squad_col:
                         continue
-                    
+
                     print(f"   📊 Found standings table with columns: {', '.join(cols[:8])}")
-                    
+
                     for idx, row in table.iterrows():
                         team_name = str(row[squad_col]).lower()
-                        
+
                         try:
                             position = int(float(row[rk_col])) if rk_col and pd.notna(row[rk_col]) else idx + 1
-                        except:
+                        except (ValueError, TypeError):
                             position = idx + 1
-                        
+
                         try:
                             pts = int(float(row[pts_col])) if pts_col and pd.notna(row[pts_col]) else 0
-                        except:
+                        except (ValueError, TypeError):
                             pts = 0
-                        
-                        for canonical, aliases in teams_to_find.items():
+
+                        for canonical, aliases in TEAMS_TO_FIND.items():
                             if any(alias in team_name for alias in aliases):
                                 standings[canonical] = {"position": position, "points": pts}
                                 print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
                                 break
-                    
+
                     if standings:
                         break
-    
+
     except Exception as e:
         print(f"   ❌ FBref standings error: {e}")
-    
-    # Fallback to FotMob if FBref didn't work
-    if not standings:
-        print("   Trying FotMob as fallback...")
-        try:
-            fotmob = sd.FotMob(leagues="ENG-Premier League", seasons=SEASON)
-            table = fotmob.read_league_table()
-            df = table.reset_index()
-            
-            for idx, row in df.iterrows():
-                team_name = str(row.get('team', '')).lower()
-                position = idx + 1
-                pts = int(row.get('Pts', 0) or 0)
-                
-                for canonical, aliases in teams_to_find.items():
-                    if any(alias in team_name for alias in aliases):
-                        standings[canonical] = {"position": position, "points": pts}
-                        print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
-                        break
-        except Exception as e:
-            print(f"   ❌ FotMob fallback error: {e}")
-    
+
+    return standings
+
+
+def get_standings_soccerdata():
+    """Fallback: fetch standings via soccerdata's FotMob reader."""
+    print("   Trying soccerdata FotMob as fallback for standings...")
+    sys.stdout.flush()
+
+    standings = {}
+
+    try:
+        fotmob = sd.FotMob(leagues="ENG-Premier League", seasons=SEASON)
+        table = fotmob.read_league_table()
+        df = table.reset_index()
+
+        for idx, row in df.iterrows():
+            team_name = str(row.get('team', '')).lower()
+            position = idx + 1
+            pts = int(row.get('Pts', 0) or 0)
+
+            for canonical, aliases in TEAMS_TO_FIND.items():
+                if any(alias in team_name for alias in aliases):
+                    standings[canonical] = {"position": position, "points": pts}
+                    print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
+                    break
+
+    except Exception as e:
+        print(f"   ❌ FotMob fallback error: {e}")
+
     return standings
 
 
 def update_constants_ts(stats, standings, has_fbref_data=True):
     """Update the constants.ts file with new stats."""
     print("\n📝 Updating constants.ts...")
-    
-    # Determine path (works from project root or scripts directory)
-    constants_path = "constants.ts"
-    if not os.path.exists(constants_path):
-        constants_path = "../constants.ts"
-    if not os.path.exists(constants_path):
-        print("   ❌ Could not find constants.ts")
+
+    if not os.path.exists(CONSTANTS_PATH):
+        print(f"   ❌ Could not find constants.ts at {CONSTANTS_PATH}")
         return False
-    
-    with open(constants_path, 'r') as f:
+
+    with open(CONSTANTS_PATH, 'r') as f:
         content = f.read()
-    
+
     original_content = content
-    
+
     if has_fbref_data:
         # Update bet_01: Martin vs Bruno (Assists)
         odegaard_assists = stats.get("odegaard", {}).get("assists", 0)
@@ -311,8 +362,8 @@ def update_constants_ts(stats, standings, has_fbref_data=True):
         madueke_ga = stats.get("madueke", {}).get("g_a", 0)
         content = update_bet_metrics(content, "bet_02",
                                      label="G/A (All Comps)",
-                                     valueA=zirkzee_ga,  # Zirkzee is A (Shiv backs)
-                                     valueB=madueke_ga)  # Madueke is B (Mitch backs)
+                                     valueA=zirkzee_ga,
+                                     valueB=madueke_ga)
         print(f"   bet_02: G/A - Zirkzee {zirkzee_ga}, Madueke {madueke_ga}")
         
         # Update bet_03: Zirkzee vs Cherki (G/A)
@@ -352,9 +403,9 @@ def update_constants_ts(stats, standings, has_fbref_data=True):
         print(f"   bet_06: Position - Liverpool {liverpool_pos}, United {united_pos}")
     else:
         print(f"   bet_06: ⏭️  Skipping — no standings data")
-    
+
     if content != original_content:
-        with open(constants_path, 'w') as f:
+        with open(CONSTANTS_PATH, 'w') as f:
             f.write(content)
         print("   ✅ constants.ts updated!")
         return True
@@ -365,8 +416,6 @@ def update_constants_ts(stats, standings, has_fbref_data=True):
 
 def update_bet_metrics(content, bet_id, label, valueA, valueB):
     """Update metrics for a standard A vs B bet."""
-    # Find the bet block and update metrics within it
-    # Use re.escape on label to handle special regex chars like parentheses in "G/A (All Comps)"
     escaped_label = re.escape(label)
     pattern = rf"(id:\s*['\"]?{bet_id}['\"]?.*?metrics:\s*\{{[^}}]*?label:\s*['\"]){escaped_label}(['\"].*?valueA:\s*)\d+\.?\d*(.*?valueB:\s*)\d+\.?\d*"
     
@@ -413,7 +462,7 @@ BETS = [
     {
         "id": "bet_02",
         "type": "pvp",
-        "participants": {"A": ["Shiv"], "B": ["Mitch"]},  # Shiv backs Zirkzee, Mitch backs Madueke
+        "participants": {"A": ["Shiv"], "B": ["Mitch"]},
         "metric": "g_a",
         "playerA": "zirkzee",
         "playerB": "madueke",
@@ -464,7 +513,6 @@ def calculate_standings(stats, standings):
         winner_side = None
         
         if bet["type"] == "pvp":
-            # Player vs Player
             if bet["metric"] == "rating":
                 valueA = FOTMOB_RATINGS.get(bet["playerA"], 0)
                 valueB = FOTMOB_RATINGS.get(bet["playerB"], 0)
@@ -482,7 +530,6 @@ def calculate_standings(stats, standings):
                 winner_side = "A" if valueA > valueB else "B"
                 
         elif bet["type"] == "threshold":
-            # Player threshold bet
             metric = bet["metric"]
             value = stats.get(bet["player"], {}).get(metric, 0)
             target = bet["target"]
@@ -490,7 +537,6 @@ def calculate_standings(stats, standings):
             winner_side = "A" if value >= target else "B"
             
         elif bet["type"] == "position":
-            # Team position bet
             posA = standings.get(bet["teamA"], {}).get("position", 20)
             posB = standings.get(bet["teamB"], {}).get("position", 20)
             
@@ -500,7 +546,6 @@ def calculate_standings(stats, standings):
             # Lower position is better (inverse)
             winner_side = "A" if posA < posB else "B"
         
-        # Award wins to participants on winning side
         if winner_side:
             for participant in bet["participants"][winner_side]:
                 wins[participant] += 1
@@ -514,16 +559,18 @@ def update_last_updated(content):
     """Update the LAST_UPDATED timestamp in constants.ts."""
     from datetime import timezone, timedelta
     
-    # Get current time in EST
     est = timezone(timedelta(hours=-5))
     now = datetime.now(est)
     
     # Format: "Thu Jan 16, 6:34 PM EST"
-    formatted = now.strftime('%a %b %d, %-I:%M %p EST')
+    # Use platform-safe formatting (%-I on macOS/Linux, but %#I on Windows)
+    try:
+        formatted = now.strftime('%a %b %d, %-I:%M %p EST')
+    except ValueError:
+        formatted = now.strftime('%a %b %d, %I:%M %p EST')
     
     print(f"\n🕐 Updating LAST_UPDATED to: {formatted}")
     
-    # Replace the LAST_UPDATED line
     pattern = r"export const LAST_UPDATED = '[^']*';"
     replacement = f"export const LAST_UPDATED = '{formatted}';"
     
@@ -541,7 +588,6 @@ def update_league_history(content, wins):
     print(f"   Current standings: Diogo={wins['Diogo']}, Shiv={wins['Shiv']}, Mitch={wins['Mitch']}")
     
     # Check if current month already exists
-    # Match the full entry including both closing braces: scores: {...} and the outer }
     month_pattern = rf"\{{\s*month:\s*'{current_month}'.*?year:\s*'{current_year}'.*?\}}\s*\}}"
     existing_match = re.search(month_pattern, content, re.DOTALL)
     
@@ -556,13 +602,10 @@ def update_league_history(content, wins):
   }}"""
     
     if existing_match:
-        # Update existing month entry
         print(f"   Updating existing {current_month} entry...")
         content = re.sub(month_pattern, new_entry, content, flags=re.DOTALL)
     else:
-        # Add new month entry before the closing bracket
         print(f"   Adding new {current_month} entry...")
-        # Find the last }} (inner scores + outer entry) before ]; in LEAGUE_HISTORY
         pattern = r"(export const LEAGUE_HISTORY: MonthlyStanding\[\] = \[.*?\}\s*\})\s*\];"
         replacement = rf"\1,\n  {new_entry}\n];"
         content = re.sub(pattern, replacement, content, flags=re.DOTALL)
@@ -573,22 +616,36 @@ def update_league_history(content, wins):
 def main():
     print("=" * 60)
     print("⚽ TopBins Auto Stats Update")
-    print("📚 Sources: FBref (Selenium) + FotMob")
+    print("📚 Sources: FBref (Selenium) + soccerdata + FotMob")
     print(f"📅 Season: {SEASON}")
     print(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"📂 Project root: {PROJECT_ROOT}")
+    print(f"🤖 CI mode: {IS_CI}")
     print("=" * 60)
     sys.stdout.flush()
     
-    # Fetch stats
+    # ---------- Fetch player stats ----------
     stats = get_fbref_stats_selenium()
+
+    if not stats or all(s.get("goals", 0) == 0 and s.get("assists", 0) == 0 for s in stats.values()):
+        print("\n⚠️  Selenium returned no player data — trying soccerdata fallback...")
+        stats = get_fbref_stats_soccerdata()
+
     time.sleep(1)
+
+    # ---------- Fetch standings ----------
     standings = get_standings_fbref_selenium()
-    
-    # Check if FBref scrape returned actual player data (not all zeros)
+
+    if not standings:
+        print("\n⚠️  Selenium returned no standings — trying soccerdata fallback...")
+        standings = get_standings_soccerdata()
+
+    # ---------- Evaluate what we got ----------
     has_fbref_data = any(
         s.get("goals", 0) > 0 or s.get("assists", 0) > 0
         for s in stats.values()
-    )
+    ) if stats else False
+
     has_standings_data = bool(standings)
     
     if not has_fbref_data and not has_standings_data:
@@ -599,40 +656,31 @@ def main():
         return
     
     if not has_fbref_data:
-        print("\n⚠️  FBref player stats scrape returned no data — will skip player bets but still update standings.")
+        print("\n⚠️  Player stats scrape returned no data — will skip player bets but still update standings.")
     
-    # Save raw data
+    # ---------- Save raw data ----------
     output = {
         "timestamp": datetime.now().isoformat(),
         "season": SEASON,
-        "sources": ["FBref (Selenium)", "FotMob"],
+        "sources": ["FBref (Selenium)", "soccerdata", "FotMob"],
         "players": stats,
         "standings": standings,
         "fotmob_ratings": FOTMOB_RATINGS
     }
     
-    json_path = "scripts/latest_stats.json"
-    if not os.path.exists("scripts"):
-        json_path = "latest_stats.json"
-    
-    with open(json_path, "w") as f:
+    with open(LATEST_STATS_PATH, "w") as f:
         json.dump(output, f, indent=2)
-    print(f"\n💾 Saved raw data to {json_path}")
+    print(f"\n💾 Saved raw data to {LATEST_STATS_PATH}")
     
-    # Update constants.ts with bet metrics (only update what we have data for)
+    # ---------- Update constants.ts ----------
     update_constants_ts(stats, standings, has_fbref_data)
     
     # Calculate participant standings
     print("\n🏆 Calculating bet standings...")
     wins = calculate_standings(stats, standings)
     
-    # Update LEAGUE_HISTORY with current month
-    constants_path = "constants.ts"
-    if not os.path.exists(constants_path):
-        constants_path = "../constants.ts"
-    
-    if os.path.exists(constants_path):
-        with open(constants_path, 'r') as f:
+    if os.path.exists(CONSTANTS_PATH):
+        with open(CONSTANTS_PATH, 'r') as f:
             content = f.read()
         
         # Update timestamp
@@ -641,7 +689,7 @@ def main():
         # Update league history
         content = update_league_history(content, wins)
         
-        with open(constants_path, 'w') as f:
+        with open(CONSTANTS_PATH, 'w') as f:
             f.write(content)
         print("   ✅ constants.ts updated!")
     
