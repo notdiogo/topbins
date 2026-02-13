@@ -141,8 +141,8 @@ export const MOCK_BETS: Bet[] = [
     ],
     metrics: {
       label: 'Avg Rating',
-      valueA: 6.83,
-      valueB: 7.48
+      valueA: 6.8,
+      valueB: 7.4
     }
   },
   {

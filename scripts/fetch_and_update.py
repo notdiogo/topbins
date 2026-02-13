@@ -27,8 +27,8 @@ SEASON = "2025-2026"
 # https://www.fotmob.com/leagues/47/stats/premier-league/players/rating
 # =================================================================
 FOTMOB_RATINGS = {
-    "frimpong": 6.83,
-    "nunes": 7.48,
+    "frimpong": 6.8,
+    "nunes": 7.4,
 }
 
 # Player mappings for 2025-26 season
