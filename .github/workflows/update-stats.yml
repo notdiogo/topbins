@@ -25,14 +25,9 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Chrome for Selenium
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
-
       - name: Install Python dependencies
         run: |
-          pip install soccerdata seleniumbase pandas requests lxml html5lib supabase
+          pip install understat aiohttp requests supabase
 
       - name: Fetch latest stats and update constants
         run: python3 scripts/fetch_and_update.py

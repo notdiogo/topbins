@@ -7,13 +7,11 @@ Usage:
     python3 scripts/fetch_and_update.py
 """
 
-import soccerdata as sd
 import json
 import re
 import os
 from datetime import datetime
 import warnings
-import time
 import sys
 warnings.filterwarnings('ignore')
 
@@ -130,229 +128,110 @@ TEAMS_TO_FIND = {
 }
 
 
-def _parse_stats_table(table):
-    """Extract player stats from a pandas DataFrame (works for both Selenium and soccerdata)."""
-    import pandas as pd
+def get_player_stats_understat():
+    """Fetch player goals + assists from understat.com (not datacenter-blocked)."""
+    import asyncio
+    import aiohttp
+    from understat import Understat
 
-    results = {}
+    print("🔄 Fetching player stats via understat.com...")
+    sys.stdout.flush()
 
-    if isinstance(table.columns, pd.MultiIndex):
-        table.columns = [' '.join(str(c) for c in col).strip() for col in table.columns]
+    # understat uses the season start year (2025 for 2025-26)
+    season_year = int(SEASON.split("-")[0])
 
-    cols = list(table.columns)
-    player_col = next((c for c in cols if 'Player' in c or 'player' in c), None)
-    gls_col = next((c for c in cols if c.endswith('Gls') or c == 'Gls' or 'goal' in c.lower()), None)
-    ast_col = next((c for c in cols if c.endswith('Ast') or c == 'Ast' or 'assist' in c.lower()), None)
+    async def _fetch():
+        async with aiohttp.ClientSession() as session:
+            u = Understat(session)
+            return await u.get_league_players("epl", season_year)
 
-    if not player_col:
-        return results
+    try:
+        players = asyncio.run(_fetch())
+        results = {}
 
-    for key, info in PLAYERS.items():
-        found = False
-        for search in info["search"]:
-            mask = table[player_col].astype(str).str.contains(search, case=False, na=False)
-            matches = table[mask]
-            if len(matches) > 0:
-                row = matches.iloc[0]
-                try:
-                    goals = int(float(row[gls_col])) if gls_col and pd.notna(row[gls_col]) else 0
-                except (ValueError, TypeError):
-                    goals = 0
-                try:
-                    assists = int(float(row[ast_col])) if ast_col and pd.notna(row[ast_col]) else 0
-                except (ValueError, TypeError):
-                    assists = 0
+        for key, info in PLAYERS.items():
+            found = False
+            for search_term in info["search"]:
+                for p in players:
+                    pname = p.get("player_name", "")
+                    if search_term.lower() in pname.lower() or pname.lower() in search_term.lower():
+                        goals = int(p.get("goals", 0) or 0)
+                        assists = int(p.get("assists", 0) or 0)
+                        results[key] = {
+                            "name": info["name"],
+                            "team": info["team"],
+                            "goals": goals,
+                            "assists": assists,
+                            "g_a": goals + assists,
+                        }
+                        print(f"   ✅ {info['name']}: {goals}G, {assists}A")
+                        found = True
+                        break
+                if found:
+                    break
 
+            if not found:
                 results[key] = {
                     "name": info["name"],
                     "team": info["team"],
-                    "goals": goals,
-                    "assists": assists,
-                    "g_a": goals + assists,
+                    "goals": 0,
+                    "assists": 0,
+                    "g_a": 0,
                 }
-                print(f"   ✅ {info['name']}: {goals}G, {assists}A")
-                found = True
-                break
+                print(f"   ⚠️ {info['name']}: Not found")
 
-        if not found:
-            results[key] = {
-                "name": info["name"],
-                "team": info["team"],
-                "goals": 0,
-                "assists": 0,
-                "g_a": 0,
-            }
-            print(f"   ⚠️ {info['name']}: Not found")
-
-    return results
-
-
-def get_fbref_stats_selenium():
-    """Fetch player stats from FBref using Selenium."""
-    print("🔄 Fetching player stats via Selenium...")
-    sys.stdout.flush()
-
-    try:
-        from seleniumbase import SB
-        import pandas as pd
-        from io import StringIO
-
-        # In CI, skip uc (undetected-chrome) mode — it patches the
-        # Chrome binary and is fragile on cloud runners.  Regular
-        # headless mode works fine because FBref doesn't block simple
-        # headless requests from GitHub Actions IPs (yet).
-        sb_kwargs = {"headless": True}
-        if not IS_CI:
-            sb_kwargs["uc"] = True
-
-        with SB(**sb_kwargs) as sb:
-            url = 'https://fbref.com/en/comps/9/stats/Premier-League-Stats'
-            print(f"   Opening: {url}")
-            sb.open(url)
-
-            wait_time = 12 if IS_CI else 8
-            print(f"   Waiting {wait_time}s for page to load...")
-            sys.stdout.flush()
-            time.sleep(wait_time)
-
-            html = sb.get_page_source()
-            tables = pd.read_html(StringIO(html))
-            print(f"   Found {len(tables)} tables")
-
-            for table in tables:
-                if len(table) > 100:
-                    print(f"   Processing table with {len(table)} rows")
-                    results = _parse_stats_table(table)
-                    if results:
-                        return results
+        return results
 
     except Exception as e:
-        print(f"   ❌ Selenium error: {e}")
+        print(f"   ❌ Understat error: {e}")
         sys.stdout.flush()
 
     return {}
 
 
-def get_fbref_stats_soccerdata():
-    """Fallback: fetch stats via soccerdata's FBref reader (no browser needed)."""
-    print("🔄 Fetching player stats via soccerdata FBref reader (fallback)...")
+def get_standings_espn():
+    """Fetch EPL standings from ESPN's public API (no auth, not datacenter-blocked)."""
+    import requests
+
+    print("\n🔄 Fetching EPL standings via ESPN API...")
     sys.stdout.flush()
 
-    try:
-        fbref = sd.FBref(leagues="ENG-Premier League", seasons=SEASON)
-        stats_df = fbref.read_player_season_stats(stat_type="standard")
-        stats_df = stats_df.reset_index()
-
-        results = _parse_stats_table(stats_df)
-        if results:
-            return results
-    except Exception as e:
-        print(f"   ❌ soccerdata FBref error: {e}")
-        sys.stdout.flush()
-
-    return {}
-
-
-def get_standings_fbref_selenium():
-    """Fetch EPL standings from FBref using Selenium."""
-    print("\n🔄 Fetching EPL standings via Selenium...")
-    sys.stdout.flush()
-
+    url = "https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings"
     standings = {}
 
     try:
-        from seleniumbase import SB
-        import pandas as pd
-        from io import StringIO
+        resp = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+        data = resp.json()
 
-        sb_kwargs = {"headless": True}
-        if not IS_CI:
-            sb_kwargs["uc"] = True
+        # Walk the response: top-level or nested under 'children'
+        groups = data.get("children", [data])
+        entries = []
+        for group in groups:
+            entries.extend(group.get("standings", {}).get("entries", []))
+        if not entries:
+            entries = data.get("standings", {}).get("entries", [])
 
-        with SB(**sb_kwargs) as sb:
-            url = 'https://fbref.com/en/comps/9/Premier-League-Stats'
-            print(f"   Opening: {url}")
-            sb.open(url)
-
-            wait_time = 12 if IS_CI else 8
-            print(f"   Waiting {wait_time}s for page to load...")
-            sys.stdout.flush()
-            time.sleep(wait_time)
-
-            html = sb.get_page_source()
-            tables = pd.read_html(StringIO(html))
-            print(f"   Found {len(tables)} tables")
-
-            # The standings table typically has 20 rows (20 teams)
-            for table in tables:
-                if len(table) >= 18 and len(table) <= 22:
-                    cols = list(table.columns)
-                    if isinstance(table.columns, pd.MultiIndex):
-                        table.columns = [' '.join(str(c) for c in col).strip() for col in table.columns]
-                        cols = list(table.columns)
-
-                    squad_col = next((c for c in cols if 'Squad' in c or 'Team' in c), None)
-                    rk_col = next((c for c in cols if 'Rk' in c), None)
-                    pts_col = next((c for c in cols if 'Pts' in c), None)
-
-                    if not squad_col:
-                        continue
-
-                    print(f"   📊 Found standings table with columns: {', '.join(cols[:8])}")
-
-                    for idx, row in table.iterrows():
-                        team_name = str(row[squad_col]).lower()
-
-                        try:
-                            position = int(float(row[rk_col])) if rk_col and pd.notna(row[rk_col]) else idx + 1
-                        except (ValueError, TypeError):
-                            position = idx + 1
-
-                        try:
-                            pts = int(float(row[pts_col])) if pts_col and pd.notna(row[pts_col]) else 0
-                        except (ValueError, TypeError):
-                            pts = 0
-
-                        for canonical, aliases in TEAMS_TO_FIND.items():
-                            if any(alias in team_name for alias in aliases):
-                                standings[canonical] = {"position": position, "points": pts}
-                                print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
-                                break
-
-                    if standings:
-                        break
-
-    except Exception as e:
-        print(f"   ❌ FBref standings error: {e}")
-
-    return standings
-
-
-def get_standings_soccerdata():
-    """Fallback: fetch standings via soccerdata's FotMob reader."""
-    print("   Trying soccerdata FotMob as fallback for standings...")
-    sys.stdout.flush()
-
-    standings = {}
-
-    try:
-        fotmob = sd.FotMob(leagues="ENG-Premier League", seasons=SEASON)
-        table = fotmob.read_league_table()
-        df = table.reset_index()
-
-        for idx, row in df.iterrows():
-            team_name = str(row.get('team', '')).lower()
-            position = idx + 1
-            pts = int(row.get('Pts', 0) or 0)
+        for entry in entries:
+            team_name = entry.get("team", {}).get("displayName", "").lower()
+            rank = None
+            pts = None
+            for stat in entry.get("stats", []):
+                name = stat.get("name", "")
+                if name == "rank":
+                    rank = int(stat.get("value", 0))
+                elif name == "points":
+                    pts = int(stat.get("value", 0))
 
             for canonical, aliases in TEAMS_TO_FIND.items():
                 if any(alias in team_name for alias in aliases):
-                    standings[canonical] = {"position": position, "points": pts}
-                    print(f"   ✅ {canonical}: Position {position} ({pts} pts)")
+                    standings[canonical] = {"position": rank or 0, "points": pts or 0}
+                    print(f"   ✅ {canonical}: Position {rank} ({pts} pts)")
                     break
 
     except Exception as e:
-        print(f"   ❌ FotMob fallback error: {e}")
+        print(f"   ❌ ESPN API error: {e}")
+        sys.stdout.flush()
 
     return standings
 
@@ -710,29 +589,19 @@ def push_to_supabase(stats, standings, wins, formatted_timestamp, has_fbref_data
 def main():
     print("=" * 60)
     print("⚽ TopBins Auto Stats Update")
-    print("📚 Sources: FBref (Selenium) + soccerdata + FotMob")
+    print("📚 Sources: understat.com + ESPN API")
     print(f"📅 Season: {SEASON}")
     print(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"📂 Project root: {PROJECT_ROOT}")
     print(f"🤖 CI mode: {IS_CI}")
     print("=" * 60)
     sys.stdout.flush()
-    
+
     # ---------- Fetch player stats ----------
-    stats = get_fbref_stats_selenium()
-
-    if not stats or all(s.get("goals", 0) == 0 and s.get("assists", 0) == 0 for s in stats.values()):
-        print("\n⚠️  Selenium returned no player data — trying soccerdata fallback...")
-        stats = get_fbref_stats_soccerdata()
-
-    time.sleep(1)
+    stats = get_player_stats_understat()
 
     # ---------- Fetch standings ----------
-    standings = get_standings_fbref_selenium()
-
-    if not standings:
-        print("\n⚠️  Selenium returned no standings — trying soccerdata fallback...")
-        standings = get_standings_soccerdata()
+    standings = get_standings_espn()
 
     # ---------- Evaluate what we got ----------
     has_fbref_data = any(
@@ -756,7 +625,7 @@ def main():
     output = {
         "timestamp": datetime.now().isoformat(),
         "season": SEASON,
-        "sources": ["FBref (Selenium)", "soccerdata", "FotMob"],
+        "sources": ["understat.com", "ESPN API"],
         "players": stats,
         "standings": standings,
         "fotmob_ratings": FOTMOB_RATINGS
