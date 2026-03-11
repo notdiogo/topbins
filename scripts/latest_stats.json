@@ -1,24 +1,24 @@
 {
-  "timestamp": "2026-02-13T09:13:41.429854",
+  "timestamp": "2026-03-11T19:49:35.692230",
   "season": "2025-2026",
   "sources": [
-    "FBref (Selenium)",
-    "FotMob"
+    "understat.com",
+    "ESPN API"
   ],
   "players": {
     "odegaard": {
       "name": "Martin \u00d8degaard",
       "team": "Arsenal",
       "goals": 1,
-      "assists": 4,
-      "g_a": 5
+      "assists": 5,
+      "g_a": 6
     },
     "bruno": {
       "name": "Bruno Fernandes",
       "team": "Manchester Utd",
-      "goals": 6,
-      "assists": 12,
-      "g_a": 18
+      "goals": 7,
+      "assists": 14,
+      "g_a": 21
     },
     "zirkzee": {
       "name": "Joshua Zirkzee",
@@ -30,16 +30,16 @@
     "madueke": {
       "name": "Noni Madueke",
       "team": "Arsenal",
-      "goals": 2,
+      "goals": 1,
       "assists": 1,
-      "g_a": 3
+      "g_a": 2
     },
     "cherki": {
       "name": "Rayan Cherki",
       "team": "Manchester City",
       "goals": 3,
-      "assists": 7,
-      "g_a": 10
+      "assists": 8,
+      "g_a": 11
     },
     "frimpong": {
       "name": "Jeremie Frimpong",
@@ -66,19 +66,23 @@
   "standings": {
     "Arsenal": {
       "position": 1,
-      "points": 57
+      "points": 67
     },
     "Manchester City": {
       "position": 2,
-      "points": 53
+      "points": 60
+    },
+    "Manchester United": {
+      "position": 3,
+      "points": 51
     },
     "Liverpool": {
       "position": 6,
-      "points": 42
+      "points": 48
     },
     "Wolves": {
       "position": 20,
-      "points": 9
+      "points": 16
     }
   },
   "fotmob_ratings": {
