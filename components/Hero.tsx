@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { MOCK_BETS } from '../constants';
+import { Bet } from '../types';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export const Hero: React.FC<{ onNavigate: (id: string) => void }> = ({ onNavigate }) => {
-  const featuredBets = MOCK_BETS.slice(0, 4); // Show top 4
+export const Hero: React.FC<{ onNavigate: (id: string) => void; bets: Bet[] }> = ({ onNavigate, bets }) => {
+  const featuredBets = bets.slice(0, 4); // Show top 4
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {

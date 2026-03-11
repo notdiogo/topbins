@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { MOCK_BETS, LEAGUE_HISTORY } from '../constants'; // Import LEAGUE_HISTORY
+import { Bet, MonthlyStanding } from '../types';
 import { TrendingUp } from 'lucide-react';
 
 const PARTICIPANTS = [
@@ -8,12 +8,12 @@ const PARTICIPANTS = [
   { name: 'Mitch', color: '#FF2E63' }  // Neon Red/Pink
 ];
 
-export const LiveLeaderboard: React.FC = () => {
+export const LiveLeaderboard: React.FC<{ bets: Bet[]; leagueHistory: MonthlyStanding[] }> = ({ bets, leagueHistory }) => {
   // 1. Calculate Current Wins (Keep this for the Live Cards)
   const currentWins = useMemo(() => {
     const wins: Record<string, number> = { Diogo: 0, Shiv: 0, Mitch: 0 };
 
-    MOCK_BETS.forEach(bet => {
+    bets.forEach(bet => {
         if (bet.status !== 'ACTIVE') return;
 
         let winningSide: 'A' | 'B' | null = null;
@@ -55,11 +55,10 @@ export const LiveLeaderboard: React.FC = () => {
         }
     });
     return wins;
-  }, []);
+  }, [bets]);
 
-  // 2. Prepare Graph Data from LEAGUE_HISTORY
-  // This replaces the hardcoded Aug/Sep/Oct/Nov block
-  const historyData = LEAGUE_HISTORY.map(entry => ({
+  // 2. Prepare Graph Data from leagueHistory prop
+  const historyData = leagueHistory.map(entry => ({
       month: entry.month,
       values: entry.scores
   }));

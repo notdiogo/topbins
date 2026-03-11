@@ -30,12 +30,14 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install soccerdata seleniumbase pandas requests lxml html5lib
+          pip install soccerdata seleniumbase pandas requests lxml html5lib supabase
 
       - name: Fetch latest stats and update constants
         run: python3 scripts/fetch_and_update.py
         env:
           CI: true
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Check for changes
         id: git-check

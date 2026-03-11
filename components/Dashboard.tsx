@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
-import { MOCK_BETS, LAST_UPDATED } from '../constants';
 import { BetListRow } from './BetListRow';
 import { BetModal } from './BetModal';
 import { Bet } from '../types';
 import { Clock } from 'lucide-react';
 
-export const Dashboard: React.FC = () => {
+export const Dashboard: React.FC<{ bets: Bet[]; lastUpdated: string }> = ({ bets, lastUpdated }) => {
   const [selectedBet, setSelectedBet] = useState<Bet | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -37,23 +36,23 @@ export const Dashboard: React.FC = () => {
            </div>
            <div className="flex items-center gap-2 text-xs font-mono text-gray-500 uppercase tracking-widest">
               <Clock className="w-4 h-4" />
-              Last updated: {LAST_UPDATED}
+              Last updated: {lastUpdated}
            </div>
         </div>
 
         {/* List View */}
         <div className="flex flex-col border-t border-white/10">
-          {MOCK_BETS.map((bet) => (
-            <BetListRow 
-              key={bet.id} 
-              bet={bet} 
-              onClick={() => handleBetClick(bet)} 
+          {bets.map((bet) => (
+            <BetListRow
+              key={bet.id}
+              bet={bet}
+              onClick={() => handleBetClick(bet)}
             />
           ))}
         </div>
 
         {/* Empty State */}
-        {MOCK_BETS.length === 0 && (
+        {bets.length === 0 && (
           <div className="py-32 text-center border border-dashed border-white/10 rounded-sm bg-white/5">
             <p className="font-mono text-[#CCFF00] text-sm">/// NO ACTIVE MARKETS DETECTED</p>
           </div>
