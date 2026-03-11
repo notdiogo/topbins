@@ -17,6 +17,29 @@ import time
 import sys
 warnings.filterwarnings('ignore')
 
+# ── Optional Supabase integration ────────────────────────────
+# Activated when SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are set.
+# When not configured the scraper continues to update constants.ts only.
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_ENABLED = bool(SUPABASE_URL and SUPABASE_KEY)
+
+_supabase_client = None
+
+def _get_supabase():
+    """Lazily initialise the Supabase client (requires `supabase` package)."""
+    global _supabase_client
+    if _supabase_client is not None:
+        return _supabase_client
+    try:
+        from supabase import create_client
+        _supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("   ✅ Supabase client initialised")
+    except ImportError:
+        print("   ⚠️  `supabase` package not installed — skipping Supabase writes")
+        _supabase_client = False  # sentinel so we don't retry
+    return _supabase_client
+
 # ------------------------------------------------------------------
 # Paths — always resolve relative to this script's location so it
 # works regardless of the current working directory (repo root,
@@ -613,6 +636,77 @@ def update_league_history(content, wins):
     return content
 
 
+def push_to_supabase(stats, standings, wins, formatted_timestamp, has_fbref_data=True):
+    """Write live metrics to Supabase. Only runs when credentials are set."""
+    if not SUPABASE_ENABLED:
+        print("\n⏭️  Supabase not configured — skipping remote write (set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY)")
+        return
+
+    sb = _get_supabase()
+    if not sb:
+        return
+
+    print("\n☁️  Pushing data to Supabase...")
+
+    # ── Update bet metrics ──────────────────────────────────
+    bet_updates = []
+
+    if has_fbref_data:
+        odegaard_assists = stats.get("odegaard", {}).get("assists", 0)
+        bruno_assists    = stats.get("bruno", {}).get("assists", 0)
+        bet_updates.append(("bet_01", {"label": "Assists", "valueA": odegaard_assists, "valueB": bruno_assists}))
+
+        zirkzee_ga = stats.get("zirkzee", {}).get("g_a", 0)
+        madueke_ga = stats.get("madueke", {}).get("g_a", 0)
+        cherki_ga  = stats.get("cherki",  {}).get("g_a", 0)
+        bet_updates.append(("bet_02", {"label": "G/A (All Comps)", "valueA": zirkzee_ga, "valueB": madueke_ga}))
+        bet_updates.append(("bet_03", {"label": "G/A (All Comps)", "valueA": zirkzee_ga, "valueB": cherki_ga}))
+
+        cunha_ga = stats.get("cunha", {}).get("g_a", 0)
+        bet_updates.append(("bet_05", {"label": "Non-Pen G/A", "valueA": cunha_ga, "target": 20}))
+
+    frimpong_rating = FOTMOB_RATINGS.get("frimpong", 0)
+    nunes_rating    = FOTMOB_RATINGS.get("nunes",    0)
+    bet_updates.append(("bet_04", {"label": "Avg Rating", "valueA": frimpong_rating, "valueB": nunes_rating}))
+
+    liverpool_pos = standings.get("Liverpool",         {}).get("position", 0)
+    united_pos    = standings.get("Manchester United", {}).get("position", 0)
+    if liverpool_pos > 0 or united_pos > 0:
+        bet_updates.append(("bet_06", {"label": "League Position", "valueA": liverpool_pos, "valueB": united_pos, "isInverse": True, "maxValue": 20}))
+
+    for bet_id, metrics in bet_updates:
+        try:
+            sb.table("bets").update({"metrics": metrics}).eq("id", bet_id).execute()
+            print(f"   ✅ {bet_id} metrics updated")
+        except Exception as e:
+            print(f"   ❌ {bet_id} update failed: {e}")
+
+    # ── Upsert league history for current month ─────────────
+    now = datetime.now()
+    current_month = now.strftime('%b').upper()[:3]
+    current_year  = now.strftime('%Y')
+    scores = {"Diogo": wins["Diogo"], "Shiv": wins["Shiv"], "Mitch": wins["Mitch"]}
+
+    try:
+        sb.table("league_history").upsert(
+            {"month": current_month, "year": current_year, "scores": scores},
+            on_conflict="month,year"
+        ).execute()
+        print(f"   ✅ league_history {current_month} {current_year} upserted")
+    except Exception as e:
+        print(f"   ❌ league_history upsert failed: {e}")
+
+    # ── Update last_updated timestamp ───────────────────────
+    try:
+        sb.table("app_meta").upsert(
+            {"key": "last_updated", "value": formatted_timestamp},
+            on_conflict="key"
+        ).execute()
+        print(f"   ✅ app_meta last_updated set to: {formatted_timestamp}")
+    except Exception as e:
+        print(f"   ❌ app_meta update failed: {e}")
+
+
 def main():
     print("=" * 60)
     print("⚽ TopBins Auto Stats Update")
@@ -679,20 +773,33 @@ def main():
     print("\n🏆 Calculating bet standings...")
     wins = calculate_standings(stats, standings)
     
+    formatted_timestamp = ""
     if os.path.exists(CONSTANTS_PATH):
         with open(CONSTANTS_PATH, 'r') as f:
             content = f.read()
-        
+
         # Update timestamp
         content = update_last_updated(content)
-        
+
+        # Capture the formatted timestamp for Supabase
+        from datetime import timezone, timedelta
+        est = timezone(timedelta(hours=-5))
+        now_est = datetime.now(est)
+        try:
+            formatted_timestamp = now_est.strftime('%a %b %d, %-I:%M %p EST')
+        except ValueError:
+            formatted_timestamp = now_est.strftime('%a %b %d, %I:%M %p EST')
+
         # Update league history
         content = update_league_history(content, wins)
-        
+
         with open(CONSTANTS_PATH, 'w') as f:
             f.write(content)
         print("   ✅ constants.ts updated!")
-    
+
+    # ── Push to Supabase (when credentials are configured) ──
+    push_to_supabase(stats, standings, wins, formatted_timestamp, has_fbref_data)
+
     print("\n" + "=" * 60)
     print("✅ Done!")
     print("=" * 60)
