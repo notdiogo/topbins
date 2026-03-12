@@ -1,14 +1,14 @@
 {
-  "timestamp": "2026-03-12T14:21:03.585850",
+  "timestamp": "2026-03-12T14:37:24.247154",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
-    "FBref (FA Cup + Carabao Cup)",
-    "ESPN API"
+    "ESPN match summaries (FA Cup + Carabao Cup)",
+    "ESPN API (standings)"
   ],
   "notes": {
     "bet_02_03": "G/A totals for Zirkzee/Madueke/Cherki include EPL + FA Cup + Carabao Cup",
-    "cup_stats_source": "FBref \u2014 falls back to EPL-only if FBref is unavailable (403/timeout)"
+    "cup_stats_source": "ESPN match summaries \u2014 falls back to EPL-only if ESPN cup endpoints unavailable"
   },
   "players": {
     "odegaard": {
