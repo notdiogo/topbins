@@ -68,20 +68,37 @@ export function useAuth(): AuthHook {
       setIsLoading(false);
     });
 
-    // Format 3: token_hash — must be exchanged explicitly via verifyOtp.
-    if (supabase && tokenHash && tokenHashType) {
+    // Explicit session bootstrap — don't rely on _initialize() timing.
+    if (hashInvite) {
+      // Hash tokens: parse access_token + refresh_token and set session directly.
+      const hp = new URLSearchParams(_hash.slice(1));
+      const at = hp.get('access_token');
+      const rt = hp.get('refresh_token');
+      if (at && rt) {
+        supabase.auth.setSession({ access_token: at, refresh_token: rt })
+          .then(({ error }) => {
+            if (error) {
+              console.error('[auth] setSession error:', error.message);
+              setIsLoading(false);
+            }
+          });
+      } else {
+        console.error('[auth] hash invite detected but tokens missing');
+        setIsLoading(false);
+      }
+    } else if (tokenHash && tokenHashType) {
+      // OTP token_hash format — exchange via verifyOtp.
       supabase.auth.verifyOtp({
         token_hash: tokenHash,
         type: tokenHashType as Parameters<typeof supabase.auth.verifyOtp>[0]['type'],
       }).then(({ error }) => {
         if (error) {
           console.error('[auth] verifyOtp error:', error.message);
-          setIsLoading(false); // Fall back to login page on failure.
+          setIsLoading(false);
         }
       });
     } else {
-      // Formats 1 & 2: getSession() triggers the PKCE code exchange or reads
-      // the implicit hash token. Safe to call even if there is nothing to exchange.
+      // No invite in URL — restore existing session from storage (or return null).
       supabase.auth.getSession();
     }
 
