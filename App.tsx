@@ -30,9 +30,7 @@ const App: React.FC = () => {
     setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 50);
   };
 
-  // Show spinner while auth resolves, and also while an invite token is being
-  // processed (so the login page never flashes before the session arrives).
-  if (isLoading || (needsPasswordSet && !user)) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-parchment flex items-center justify-center">
         <span className="text-muted text-sm">Loading…</span>
