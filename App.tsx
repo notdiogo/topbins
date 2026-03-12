@@ -4,6 +4,7 @@ import { Hero } from './components/Hero';
 import { Dashboard } from './components/Dashboard';
 import { LiveLeaderboard } from './components/LiveLeaderboard';
 import { LoginPage } from './components/LoginPage';
+import { SetPasswordPage } from './components/SetPasswordPage';
 import { ManagePage } from './components/manage/ManagePage';
 import { SectionId, Bet, MonthlyStanding } from './types';
 import { MOCK_BETS, LEAGUE_HISTORY, LAST_UPDATED } from './constants';
@@ -11,7 +12,7 @@ import { fetchBets, fetchLeagueHistory, fetchLastUpdated } from './services/supa
 import { useAuth } from './hooks/useAuth';
 
 const App: React.FC = () => {
-  const { user, isAdmin, isLoading, signIn, signOut } = useAuth();
+  const { user, isAdmin, isLoading, needsPasswordSet, signIn, signOut, setPassword } = useAuth();
   const [bets, setBets] = useState<Bet[]>(MOCK_BETS);
   const [leagueHistory, setLeagueHistory] = useState<MonthlyStanding[]>(LEAGUE_HISTORY);
   const [lastUpdated, setLastUpdated] = useState(LAST_UPDATED);
@@ -39,6 +40,10 @@ const App: React.FC = () => {
 
   if (!user) {
     return <LoginPage onSignIn={signIn} />;
+  }
+
+  if (needsPasswordSet) {
+    return <SetPasswordPage onSetPassword={setPassword} />;
   }
 
   return (
