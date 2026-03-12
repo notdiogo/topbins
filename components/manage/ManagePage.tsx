@@ -21,23 +21,9 @@ export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) =>
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const openEdit = (bet: Bet) => {
-    setIsNew(false);
-    setSelected(bet);
-    setSaveError(null);
-  };
-
-  const openNew = () => {
-    setIsNew(true);
-    setSelected(null);
-    setSaveError(null);
-  };
-
-  const closeForm = () => {
-    setSelected(null);
-    setIsNew(false);
-    setSaveError(null);
-  };
+  const openEdit = (bet: Bet) => { setIsNew(false); setSelected(bet); setSaveError(null); };
+  const openNew  = () => { setIsNew(true); setSelected(null); setSaveError(null); };
+  const closeForm = () => { setSelected(null); setIsNew(false); setSaveError(null); };
 
   const handleSave = async (bet: Bet) => {
     setSaveError(null);
@@ -67,7 +53,7 @@ export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) =>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-serif font-bold text-2xl text-ink">Manage Bets</h1>
-          <p className="text-muted text-sm mt-0.5">Admin only — changes go live immediately.</p>
+          <p className="text-muted text-sm mt-0.5">Changes go live immediately.</p>
         </div>
         <button
           onClick={openNew}
@@ -78,7 +64,6 @@ export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) =>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Left: bet list */}
         <div className="space-y-2">
           {bets.map((bet) => (
             <button
@@ -99,25 +84,21 @@ export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) =>
               <div className="text-xs text-muted mt-0.5">{bet.league} · {bet.season}</div>
             </button>
           ))}
-
           {bets.length === 0 && (
             <p className="text-muted text-sm text-center py-8">No bets yet. Create one!</p>
           )}
         </div>
 
-        {/* Right: form */}
         {showForm ? (
           <div className="bg-beige border border-warm-border rounded-lg p-6">
             <h2 className="font-serif font-bold text-lg text-ink mb-5">
               {isNew ? 'New bet' : `Edit: ${selected?.title}`}
             </h2>
-
             {saveError && (
               <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-4">
                 {saveError}
               </p>
             )}
-
             <BetForm
               initial={isNew ? null : selected}
               onSave={handleSave}

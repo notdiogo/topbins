@@ -8,6 +8,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabaseAdmin';
 import { Bet, MonthlyStanding } from '../types';
 import { MOCK_BETS, LEAGUE_HISTORY, LAST_UPDATED } from '../constants';
 
@@ -111,14 +112,16 @@ function betToRow(bet: Partial<Bet>): Record<string, unknown> {
 }
 
 export async function updateBet(id: string, fields: Partial<Bet>): Promise<void> {
-  if (!supabase) throw new Error('Supabase not configured');
-  const { error } = await supabase.from('bets').update(betToRow(fields)).eq('id', id);
+  const client = supabaseAdmin ?? supabase;
+  if (!client) throw new Error('Supabase not configured');
+  const { error } = await client.from('bets').update(betToRow(fields)).eq('id', id);
   if (error) throw new Error(error.message);
 }
 
 export async function createBet(bet: Omit<Bet, 'id'>): Promise<Bet> {
-  if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase
+  const client = supabaseAdmin ?? supabase;
+  if (!client) throw new Error('Supabase not configured');
+  const { data, error } = await client
     .from('bets')
     .insert(betToRow(bet))
     .select()
