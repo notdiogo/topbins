@@ -88,3 +88,41 @@ export async function fetchLastUpdated(): Promise<string> {
 
   return data.value as string;
 }
+
+// ── admin mutations ───────────────────────────────────────────
+
+function betToRow(bet: Partial<Bet>): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
+  if (bet.slug            !== undefined) row.slug            = bet.slug;
+  if (bet.title           !== undefined) row.title           = bet.title;
+  if (bet.league          !== undefined) row.league          = bet.league;
+  if (bet.season          !== undefined) row.season          = bet.season;
+  if (bet.type            !== undefined) row.type            = bet.type;
+  if (bet.criteria        !== undefined) row.criteria        = bet.criteria;
+  if (bet.voidConditions  !== undefined) row.void_conditions = bet.voidConditions;
+  if (bet.prize           !== undefined) row.prize           = bet.prize;
+  if (bet.status          !== undefined) row.status          = bet.status;
+  if (bet.heroImage       !== undefined) row.hero_image      = bet.heroImage;
+  if (bet.useCustomHero   !== undefined) row.use_custom_hero = bet.useCustomHero;
+  if (bet.participants    !== undefined) row.participants    = bet.participants;
+  if (bet.entities        !== undefined) row.entities        = bet.entities;
+  if (bet.metrics         !== undefined) row.metrics         = bet.metrics;
+  return row;
+}
+
+export async function updateBet(id: string, fields: Partial<Bet>): Promise<void> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { error } = await supabase.from('bets').update(betToRow(fields)).eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function createBet(bet: Omit<Bet, 'id'>): Promise<Bet> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase
+    .from('bets')
+    .insert(betToRow(bet))
+    .select()
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Failed to create bet');
+  return rowToBet(data as Record<string, unknown>);
+}
