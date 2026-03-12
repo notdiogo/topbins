@@ -2,100 +2,49 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>TopBins</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,500;0,600;0,700;1,700&family=Rajdhani:wght@300;500;600;700&family=Inter:wght@400;600;800&family=Anton&display=swap" rel="stylesheet">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#F7F3EE" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TopBins" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
     <style>
       :root {
-        --neon-red: #FF003C;
-        --neon-volt: #CCFF00;
-        --deep-black: #050505;
+        --parchment: #F7F3EE;
+        --forest:    #2A5A0E;
+        --ink:       #1C1916;
       }
+      *, *::before, *::after { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
       body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--deep-black);
-        color: #eee;
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: var(--parchment);
+        color: var(--ink);
         overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
       }
-      
-      /* Global Noise Texture */
-      body::before {
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
-        pointer-events: none;
-        z-index: 9999;
-        opacity: 0.4;
-      }
-
-      h1, h2, h3, h4, .display-font {
-        font-family: 'Chakra Petch', sans-serif;
-      }
-      .font-tech {
-        font-family: 'Rajdhani', sans-serif;
-      }
-      .font-poster {
-        font-family: 'Anton', sans-serif;
-      }
-
-      /* Selection */
       ::selection {
-        background-color: var(--neon-volt);
-        color: black;
+        background-color: var(--forest);
+        color: #fff;
       }
-      
-      /* Cyber Grid Background */
-      .cyber-grid {
-        background-size: 40px 40px;
-        background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                          linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-        mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
-      }
-
-      /* Chrome Text Effect */
-      .chrome-text {
-        background: linear-gradient(to bottom, #fff 0%, #e4e4e7 40%, #a1a1aa 50%, #d1d5db 51%, #ffffff 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        filter: drop-shadow(0px 0px 2px rgba(255,255,255,0.3));
-      }
-      
-      .text-stroke {
-        -webkit-text-stroke: 1px rgba(255,255,255,0.2);
-        color: transparent;
-      }
-
-      /* CRT Scanline Effect */
-      .scanlines {
-        background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-        background-size: 100% 3px;
-      }
-
-      /* Custom Scrollbar */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #000; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #333; 
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--neon-volt); 
-      }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #EDE8DE; }
+      ::-webkit-scrollbar-thumb { background: #DDD8D0; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--forest); }
     </style>
-  
-</head>
+  </head>
   <body>
     <div id="root"></div>
-  <script type="module" src="/index.tsx"></script>
-</body>
+    <script type="module" src="/index.tsx"></script>
+  </body>
 </html>

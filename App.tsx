@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { Dashboard } from './components/Dashboard';
 import { LiveLeaderboard } from './components/LiveLeaderboard';
@@ -18,24 +19,19 @@ const App: React.FC = () => {
   }, []);
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <div className="bg-zinc-900 min-h-screen text-white selection:bg-[#CCFF00] selection:text-black">
-
-      <main className="">
+    <div className="bg-parchment min-h-screen text-ink">
+      <Navbar lastUpdated={lastUpdated} onNavigate={scrollToSection} />
+      <main>
         <section id={SectionId.HOME}>
           <Hero onNavigate={scrollToSection} bets={bets} />
         </section>
-
         <section id={SectionId.DASHBOARD}>
           <Dashboard bets={bets} lastUpdated={lastUpdated} />
         </section>
-
         <LiveLeaderboard bets={bets} leagueHistory={leagueHistory} />
       </main>
     </div>

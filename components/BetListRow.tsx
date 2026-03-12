@@ -2,245 +2,190 @@ import React from 'react';
 import { Bet } from '../types';
 import { ChevronRight } from 'lucide-react';
 
+const ordinal = (n: number) => {
+  const j = n % 10, k = n % 100;
+  if (j === 1 && k !== 11) return `${n}st`;
+  if (j === 2 && k !== 12) return `${n}nd`;
+  if (j === 3 && k !== 13) return `${n}rd`;
+  return `${n}th`;
+};
+
+const formatVal = (val: number, isInverse?: boolean) =>
+  isInverse ? ordinal(val) : String(val);
+
 interface BetListRowProps {
   bet: Bet;
   onClick: () => void;
 }
 
-const formatValue = (val: number, isInverse?: boolean) => {
-  if (!isInverse) return val;
-  const j = val % 10,
-        k = val % 100;
-  if (j == 1 && k != 11) {
-      return val + "st";
-  }
-  if (j == 2 && k != 12) {
-      return val + "nd";
-  }
-  if (j == 3 && k != 13) {
-      return val + "rd";
-  }
-  return val + "th";
-};
-
 export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
-  
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'SETTLED': return 'text-[#CCFF00]';
-      case 'VOID': return 'text-red-500';
-      case 'ACTIVE': return 'text-white';
-      default: return 'text-gray-400';
-    }
-  };
-
-  // Helper for entity images
   const entityA = bet.entities.find(e => e.side === 'A');
   const entityB = bet.entities.find(e => e.side === 'B');
-
-  // Helper for participant names
   const sideA = bet.participants.filter(p => p.side === 'A').map(p => p.name).join(' & ');
   const sideB = bet.participants.filter(p => p.side === 'B').map(p => p.name).join(' & ');
 
-  // Metrics Helpers
-  const valueA = bet.metrics?.valueA || 0;
-  const valueB = bet.metrics?.valueB || 0;
-  const target = bet.metrics?.target;
-  const isInverse = bet.metrics?.isInverse;
-  const maxValue = bet.metrics?.maxValue;
+  const { metrics } = bet;
+  const valueA = metrics?.valueA ?? 0;
+  const valueB = metrics?.valueB ?? 0;
+  const target = metrics?.target;
+  const isInverse = metrics?.isInverse;
+  const maxValue = metrics?.maxValue;
 
-  const isWinningA = target 
-    ? valueA >= target 
-    : isInverse 
-      ? valueA < valueB 
-      : valueA > valueB;
+  const isWinningA = target
+    ? valueA >= target
+    : isInverse ? valueA < valueB : valueA > valueB;
 
-  const isWinningB = target
-    ? false // Threshold bets usually single player?
-    : isInverse
-      ? valueB < valueA
-      : valueB > valueA;
+  const isWinningB = !target && (isInverse ? valueB < valueA : valueB > valueA);
+  const isTied = !target && valueA === valueB;
 
   const getBarWidth = (val: number, other: number) => {
-    if (target) {
-        return Math.min(100, (val / target) * 100);
-    }
+    if (target) return Math.min(100, (val / target) * 100);
     if (isInverse) {
-        // Inverse: Lower is better. 
-        // We want the bar to be fuller if the position is better (lower number).
-        // e.g. Rank 1 (Best) -> 100%, Rank 20 (Worst) -> 5%
-        const max = maxValue || 20; // Default to 20 if not set for inverse
-        const percentage = ((max - val + 1) / max) * 100;
-        return Math.max(5, Math.min(100, percentage));
+      const max = maxValue ?? 20;
+      return Math.max(5, Math.min(100, ((max - val + 1) / max) * 100));
     }
-    // Standard: Higher is better. Relative to the max value of the two players.
     const max = Math.max(val, other, 1);
     return Math.min(100, (val / max) * 100);
   };
 
+  const statusBadge = {
+    ACTIVE:  { dot: 'bg-forest animate-pulse', text: 'text-forest',  bg: 'bg-forest-light border-forest/20' },
+    SETTLED: { dot: 'bg-muted',                text: 'text-muted',   bg: 'bg-beige border-warm-border' },
+    VOID:    { dot: 'bg-danger',               text: 'text-danger',  bg: 'bg-danger-light border-danger/20' },
+    PENDING: { dot: 'bg-amber-500',            text: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
+  }[bet.status] ?? { dot: 'bg-muted', text: 'text-muted', bg: 'bg-beige border-warm-border' };
+
   return (
-    <div 
+    <div
       onClick={onClick}
-      className="group w-full bg-[#0a0a0a] border-b border-white/5 hover:bg-[#111] hover:border-[#CCFF00] transition-all duration-300 cursor-pointer relative overflow-hidden"
+      className="group bg-stone border border-warm-border rounded-xl shadow-sm hover:shadow-md hover:border-forest/40 transition-all duration-200 cursor-pointer overflow-hidden"
     >
-      {/* Hover Accent Bar */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#CCFF00] transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></div>
+      {/* Green left accent bar on hover */}
+      <div className="flex flex-col sm:flex-row">
 
-      <div className="flex flex-col md:flex-row items-stretch min-h-[120px]">
-        
-        {/* LEFT COL: Visuals (Headshots) */}
-        <div className="md:w-64 p-4 flex items-center justify-center md:justify-start gap-4 bg-black/20 md:border-r border-white/5 relative overflow-hidden">
-           
-           {/* Background glow on hover */}
-           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        {/* LEFT accent stripe */}
+        <div className="hidden sm:block w-1 bg-warm-border group-hover:bg-forest transition-colors rounded-l-xl" />
 
-           <div className="flex items-center relative z-10 pl-4">
-              {/* Player A Avatar */}
-              <div className={`w-16 h-16 rounded-full border-2 overflow-hidden relative z-20 shadow-lg bg-zinc-800 ${
-                !bet.metrics || isWinningA ? 'border-[#CCFF00]' : 'border-white/20'
-              }`}>
-                 <img src={entityA?.image} alt={entityA?.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-              </div>
-              
-              {/* VS Element - Only show if there is a Side B entity */}
-              {entityB && (
-                <>
-                  <div className="relative z-30 -ml-3 bg-black border border-white/20 text-[10px] font-black text-white px-1 italic transform -skew-x-12">VS</div>
+        <div className="flex-1 p-5 md:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6">
 
-                  {/* Player B Avatar */}
-                  <div className={`w-16 h-16 rounded-full border-2 overflow-hidden relative z-10 -ml-3 bg-zinc-800 ${
-                    bet.metrics && isWinningB ? 'border-[#CCFF00]' : 'border-white/20'
-                  }`}>
-                     <img src={entityB?.image} alt={entityB?.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" />
-                  </div>
-                </>
-              )}
-           </div>
-        </div>
-
-        {/* MIDDLE COL: Bet Details */}
-        <div className="flex-1 p-6 flex flex-col justify-center">
-           
-           <div className="flex items-center gap-3 mb-2">
-              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-widest border border-white/10 px-2 py-0.5 rounded-sm">
-                {bet.league}
-              </span>
-           </div>
-
-           <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white group-hover:text-[#CCFF00] transition-colors mb-3 leading-none">
-              {bet.title}
-           </h3>
-           
-           {/* VISUALIZATION SECTION */}
-           <div className="mb-4 w-full max-w-md">
-             {bet.type === 'PLAYER_THRESHOLD' && bet.metrics?.target && (
-               <div className="flex flex-col gap-1.5">
-                  <div className="flex justify-between text-[10px] font-mono uppercase text-gray-500 mb-1">
-                    <span>{bet.metrics.label}</span>
-                    <span className="font-bold text-white">{bet.metrics.valueA} / {bet.metrics.target}</span>
-                  </div>
-                  <div className="h-3 w-full bg-white/10 rounded-sm overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-500 ${
-                        isWinningA ? 'bg-[#CCFF00]' : 'bg-white/40'
-                      }`}
-                      style={{ width: `${getBarWidth(valueA, 0)}%` }}
-                    ></div>
-                  </div>
-               </div>
-             )}
-
-             {(bet.type === 'PLAYER_VS_PLAYER' || bet.type === 'TEAM_VS_TEAM') && bet.metrics && (
-               <div className="flex flex-col gap-2 mt-2">
-                  {/* Player A Bar */}
-                  <div className="flex items-center gap-3">
-                     <div className="flex-1 h-3 bg-white/10 rounded-sm overflow-hidden">
-                        <div 
-                           className={`h-full transition-all duration-500 ${
-                             isWinningA ? 'bg-[#CCFF00]' : 'bg-white/40'
-                           }`}
-                           style={{ width: `${getBarWidth(valueA, valueB)}%` }}
-                        ></div>
-                     </div>
-                     <div className={`w-10 text-xs font-mono font-bold text-left ${
-                        isWinningA ? 'text-[#CCFF00]' : 'text-gray-400'
-                     }`}>
-                       {formatValue(valueA, isInverse)}
-                     </div>
-                  </div>
-                  
-                  {/* Player B Bar */}
-                  <div className="flex items-center gap-3">
-                     <div className="flex-1 h-3 bg-white/10 rounded-sm overflow-hidden">
-                        <div 
-                           className={`h-full transition-all duration-500 ${
-                             isWinningB ? 'bg-[#CCFF00]' : 'bg-white/40'
-                           }`}
-                           style={{ width: `${getBarWidth(valueB, valueA)}%` }}
-                        ></div>
-                     </div>
-                     <div className={`w-10 text-xs font-mono font-bold text-left ${
-                        isWinningB ? 'text-[#CCFF00]' : 'text-gray-400'
-                     }`}>
-                       {formatValue(valueB, isInverse)}
-                     </div>
-                  </div>
-               </div>
-             )}
-           </div>
-
-           <div className="flex flex-col gap-1 font-mono text-xs text-gray-400">
-              <div className="flex items-center gap-2">
-                 <span className={`w-2 h-2 rounded-full ${
-                   !bet.metrics || isWinningA ? 'bg-[#CCFF00]' : 'bg-zinc-600'
-                 }`}></span>
-                 <span className={`${
-                   !bet.metrics || isWinningA ? 'text-white font-bold' : 'text-gray-500'
-                 }`}>{sideA}</span>
-                 <span className="opacity-50">backs</span>
-                 <span className={`${
-                   !bet.metrics || isWinningA ? 'text-gray-300' : 'text-gray-600'
-                 } uppercase`}>{entityA?.name.split(' ').pop()}</span>
-              </div>
-              
-              {sideB && (
-                <div className="flex items-center gap-2">
-                   <span className={`w-2 h-2 rounded-full ${
-                     bet.metrics && isWinningB ? 'bg-[#CCFF00]' : 'bg-zinc-600'
-                   }`}></span>
-                   <span className={`${
-                     bet.metrics && isWinningB ? 'text-white font-bold' : 'text-gray-500'
-                   }`}>{sideB}</span>
-                   <span className="opacity-50">backs</span>
-                   <span className={`${
-                     bet.metrics && isWinningB ? 'text-gray-300' : 'text-gray-600'
-                   } uppercase`}>{entityB?.name.split(' ').pop()}</span>
+          {/* Entity avatars */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className={`relative rounded-full border-2 overflow-hidden w-12 h-12 sm:w-14 sm:h-14 bg-beige ${isWinningA || !metrics ? 'border-forest' : 'border-warm-border'}`}>
+              <img src={entityA?.image} alt={entityA?.name} className="w-full h-full object-cover" />
+            </div>
+            {entityB && (
+              <>
+                <span className="text-xs font-bold text-muted">vs</span>
+                <div className={`relative rounded-full border-2 overflow-hidden w-12 h-12 sm:w-14 sm:h-14 bg-beige ${isWinningB ? 'border-forest' : 'border-warm-border'}`}>
+                  <img src={entityB?.image} alt={entityB?.name} className="w-full h-full object-cover" />
                 </div>
-              )}
-           </div>
-        </div>
+              </>
+            )}
+          </div>
 
-        {/* RIGHT COL: Status & Metadata */}
-        <div className="md:w-72 bg-black/20 border-l border-white/5 p-6 flex flex-col justify-between items-start md:items-end text-left md:text-right relative">
-           
-           <div className="flex flex-col items-start md:items-end">
-              <div className="font-tech text-xl font-bold text-white mb-1">{bet.season}</div>
-              <div className={`inline-flex items-center gap-2 px-2 py-0.5 rounded-sm border border-white/10 bg-white/5`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${bet.status === 'ACTIVE' ? 'bg-[#CCFF00] animate-pulse' : 'bg-gray-500'}`}></div>
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${getStatusColor(bet.status)}`}>{bet.status}</span>
+          {/* Main content */}
+          <div className="flex-1 min-w-0 flex flex-col gap-3">
+
+            {/* Title row */}
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-xs text-muted bg-beige border border-warm-border px-2 py-0.5 rounded-full font-medium">
+                    {bet.league}
+                  </span>
+                </div>
+                <h3 className="font-serif text-xl md:text-2xl font-bold text-ink leading-snug group-hover:text-forest transition-colors">
+                  {bet.title}
+                </h3>
               </div>
-           </div>
+              {/* Status badge */}
+              <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${statusBadge.bg} ${statusBadge.text}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot}`} />
+                {bet.status}
+              </span>
+            </div>
 
-           <div className="mt-4">
-              <span className="text-[10px] text-gray-600 font-mono uppercase block mb-1">Pot/Bounty</span>
-              <div className="text-sm text-gray-300 font-bold max-w-[200px] truncate">
-                 {bet.prize}
+            {/* Metrics visualization */}
+            {metrics && (
+              <div className="flex flex-col gap-2">
+                {bet.type === 'PLAYER_THRESHOLD' && target ? (
+                  // Threshold bet: single bar
+                  <div>
+                    <div className="flex justify-between text-xs text-muted mb-1.5">
+                      <span>{metrics.label}</span>
+                      <span className="font-tabular font-semibold text-ink">{valueA} / {target}</span>
+                    </div>
+                    <div className="h-2.5 w-full bg-beige rounded-full overflow-hidden border border-warm-border">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${isWinningA ? 'bg-forest' : 'bg-muted'}`}
+                        style={{ width: `${getBarWidth(valueA, 0)}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  // PvP bet: two bars
+                  <div className="flex flex-col gap-1.5">
+                    {/* Player A */}
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xs text-muted w-20 truncate shrink-0">{entityA?.name.split(' ').pop()}</span>
+                      <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden border border-warm-border">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${isWinningA ? 'bg-forest' : 'bg-muted/40'}`}
+                          style={{ width: `${getBarWidth(valueA, valueB)}%` }}
+                        />
+                      </div>
+                      <span className={`text-sm font-tabular font-bold w-8 text-right shrink-0 ${isWinningA ? 'text-forest' : 'text-muted'}`}>
+                        {formatVal(valueA, isInverse)}
+                      </span>
+                    </div>
+                    {/* Player B */}
+                    {entityB && (
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xs text-muted w-20 truncate shrink-0">{entityB?.name.split(' ').pop()}</span>
+                        <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden border border-warm-border">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${isWinningB ? 'bg-forest' : 'bg-muted/40'}`}
+                            style={{ width: `${getBarWidth(valueB, valueA)}%` }}
+                          />
+                        </div>
+                        <span className={`text-sm font-tabular font-bold w-8 text-right shrink-0 ${isWinningB ? 'text-forest' : 'text-muted'}`}>
+                          {formatVal(valueB, isInverse)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Metric label + quick summary */}
+                <div className="flex items-center justify-between text-xs text-muted mt-0.5">
+                  <span>{metrics.label}</span>
+                  {isTied && <span className="text-amber-600 font-semibold">Tied</span>}
+                  {!isTied && isWinningA && entityA && (
+                    <span className="text-forest font-semibold">{entityA.name.split(' ').pop()} leads</span>
+                  )}
+                  {!isTied && isWinningB && entityB && (
+                    <span className="text-forest font-semibold">{entityB.name.split(' ').pop()} leads</span>
+                  )}
+                </div>
               </div>
-           </div>
+            )}
 
-           <ChevronRight className="absolute bottom-6 right-6 md:left-6 w-5 h-5 text-zinc-700 group-hover:text-[#CCFF00] transition-colors opacity-0 group-hover:opacity-100 md:rotate-0" />
+            {/* Participants + prize row */}
+            <div className="flex items-end justify-between gap-2 flex-wrap pt-1 border-t border-warm-border/60">
+              <div className="text-xs text-muted leading-relaxed">
+                <span className="font-medium text-ink">{sideA}</span> backs {entityA?.name.split(' ').pop()}
+                {sideB && entityB && (
+                  <> · <span className="font-medium text-ink">{sideB}</span> backs {entityB?.name.split(' ').pop()}</>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 text-muted shrink-0">
+                <span className="text-xs truncate max-w-[150px] text-right">{bet.prize}</span>
+                <ChevronRight className="w-4 h-4 group-hover:text-forest transition-colors shrink-0" />
+              </div>
+            </div>
+
+          </div>
         </div>
-
       </div>
     </div>
   );

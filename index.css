@@ -2,5 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Additional custom styles if needed */
+@layer base {
+  h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
 
+@layer utilities {
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}

@@ -7,17 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        'neon-volt': '#CCFF00',
-        'neon-red': '#FF003C',
-        'deep-black': '#050505',
+        parchment: '#F7F3EE',
+        stone:     '#FDFBF8',
+        beige:     '#EDE8DE',
+        'warm-border': '#DDD8D0',
+        ink:       '#1C1916',
+        muted:     '#7A746C',
+        forest:    '#2A5A0E',
+        'forest-mid': '#3A7A1A',
+        'forest-light': '#EAF2E3',
+        danger:    '#9B3B3B',
+        'danger-light': '#F9EEEE',
       },
       fontFamily: {
-        'tech': ['Rajdhani', 'sans-serif'],
-        'poster': ['Anton', 'sans-serif'],
-        'display': ['Chakra Petch', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif'],
+        sans:  ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },
   plugins: [],
 }
-
