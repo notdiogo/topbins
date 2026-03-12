@@ -76,9 +76,16 @@ export function useAuth(): AuthHook {
       const rt = hp.get('refresh_token');
       if (at && rt) {
         supabase.auth.setSession({ access_token: at, refresh_token: rt })
-          .then(({ error }) => {
+          .then(({ data, error }) => {
             if (error) {
               console.error('[auth] setSession error:', error.message);
+              setIsLoading(false);
+            } else if (data.session) {
+              // setSession() doesn't reliably fire onAuthStateChange in v2.99.1,
+              // so update state directly from the promise result.
+              console.log('[auth] setSession success, user:', data.session.user.email);
+              setUser(data.session.user);
+              if (!inviteHandled.current) setNeedsPasswordSet(true);
               setIsLoading(false);
             }
           });
