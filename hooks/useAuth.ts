@@ -4,9 +4,11 @@ import { supabase } from '../lib/supabase';
 
 const ADMIN_EMAIL = 'diogoramos@me.com';
 
-// Capture the URL hash before Supabase clears it on mount
+// Capture URL before Supabase clears it. With flowType:'implicit', invite links
+// arrive as #access_token=...&type=invite in the hash.
 const initialHash = typeof window !== 'undefined' ? window.location.hash : '';
-const startsWithInviteOrRecovery = initialHash.includes('type=invite') || initialHash.includes('type=recovery');
+const isInviteOrRecovery =
+  initialHash.includes('type=invite') || initialHash.includes('type=recovery');
 
 export interface AuthHook {
   user: User | null;
@@ -20,8 +22,10 @@ export interface AuthHook {
 
 export function useAuth(): AuthHook {
   const [user, setUser] = useState<User | null>(null);
+  // Stay loading until we've heard from onAuthStateChange when an invite is in flight,
+  // so the app never briefly flashes the login page before the session arrives.
   const [isLoading, setIsLoading] = useState(true);
-  const [needsPasswordSet, setNeedsPasswordSet] = useState(startsWithInviteOrRecovery);
+  const [needsPasswordSet, setNeedsPasswordSet] = useState(isInviteOrRecovery);
 
   useEffect(() => {
     if (!supabase) {
@@ -29,16 +33,22 @@ export function useAuth(): AuthHook {
       return;
     }
 
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null);
+    // onAuthStateChange fires as soon as the session is resolved (including
+    // after Supabase processes a hash token), so we rely on it as the single
+    // source of truth rather than getSession() + a separate listener.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+    // Fallback: if no auth event arrives within 3s (e.g. no token in URL and
+    // nothing in storage), stop showing the spinner and go to the login page.
+    const timeout = setTimeout(() => setIsLoading(false), 3000);
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const signIn = async (email: string, password: string): Promise<string | null> => {
