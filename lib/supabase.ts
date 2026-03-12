@@ -7,7 +7,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
  * Returns a Supabase client when credentials are configured, otherwise null.
  * Components should fall back to local constants when this is null.
  */
+// Supabase sends invite tokens as implicit hash tokens (#access_token=...&type=invite).
+// flowType:'implicit' tells the client to process hash tokens; the default 'pkce' ignores them.
 export const supabase =
   supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
+    ? createClient(supabaseUrl, supabaseAnonKey, { auth: { flowType: 'implicit' } })
     : null;
