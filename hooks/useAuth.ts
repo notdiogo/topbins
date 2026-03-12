@@ -4,16 +4,13 @@ import { supabase } from '../lib/supabase';
 
 const ADMIN_EMAIL = 'diogoramos@me.com';
 
-// Capture URL at module load before Supabase potentially clears it.
-// PKCE invite links arrive as ?code=xxx (no type in URL).
-// Implicit invite links arrive as #access_token=...&type=invite.
-// In this app, a ?code= on initial load can only come from an email invite.
-const initialSearch = typeof window !== 'undefined' ? window.location.search : '';
-const initialHash = typeof window !== 'undefined' ? window.location.hash : '';
-const isInviteOrRecovery =
-  new URLSearchParams(initialSearch).has('code') ||
-  initialHash.includes('type=invite') ||
-  initialHash.includes('type=recovery');
+// Capture at module load — before Supabase potentially clears the URL.
+// In this app a ?code= can only arrive from an email invite (no OAuth/magic links).
+const inviteInFlight =
+  typeof window !== 'undefined' &&
+  (new URLSearchParams(window.location.search).has('code') ||
+    window.location.hash.includes('type=invite') ||
+    window.location.hash.includes('type=recovery'));
 
 export interface AuthHook {
   user: User | null;
@@ -28,7 +25,7 @@ export interface AuthHook {
 export function useAuth(): AuthHook {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [needsPasswordSet, setNeedsPasswordSet] = useState(isInviteOrRecovery);
+  const [needsPasswordSet, setNeedsPasswordSet] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -36,15 +33,33 @@ export function useAuth(): AuthHook {
       return;
     }
 
-    // onAuthStateChange is the single source of truth. For PKCE invite links
-    // Supabase automatically exchanges the ?code= for a session before firing.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        if (session) {
+          // Returning user with a stored session — go straight to the app.
+          setUser(session.user);
+          setIsLoading(false);
+        } else if (!inviteInFlight) {
+          // No session and no invite code — show the login page.
+          setIsLoading(false);
+        }
+        // else: invite code exchange is pending; stay loading until SIGNED_IN fires.
+      } else if (event === 'SIGNED_IN') {
+        setUser(session?.user ?? null);
+        // Only prompt for a password if this SIGNED_IN came from the invite URL.
+        if (inviteInFlight && session) {
+          setNeedsPasswordSet(true);
+        }
+        setIsLoading(false);
+      } else {
+        setUser(session?.user ?? null);
+        setIsLoading(false);
+      }
     });
 
-    // Fallback: stop the spinner if no auth event arrives (no token, no stored session).
-    const timeout = setTimeout(() => setIsLoading(false), 5000);
+    // Safety valve: if code exchange never fires SIGNED_IN (expired/invalid token),
+    // stop loading and fall back to the login page after 8 seconds.
+    const timeout = setTimeout(() => setIsLoading(false), 8000);
 
     return () => {
       subscription.unsubscribe();
@@ -53,7 +68,7 @@ export function useAuth(): AuthHook {
   }, []);
 
   const signIn = async (email: string, password: string): Promise<string | null> => {
-    if (!supabase) return 'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your environment.';
+    if (!supabase) return 'Supabase is not configured.';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return error?.message ?? null;
   };
@@ -67,7 +82,7 @@ export function useAuth(): AuthHook {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) return error.message;
     setNeedsPasswordSet(false);
-    // Clean up the invite URL so a page refresh doesn't re-trigger this flow.
+    // Strip ?code= from the URL so a refresh doesn't re-trigger invite detection.
     window.history.replaceState({}, '', window.location.pathname);
     return null;
   };
