@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Bet } from '../../types';
 import { BetForm } from './BetForm';
+import { UserSection } from './UserSection';
 import { updateBet, createBet } from '../../services/supabaseService';
+
+type Tab = 'bets' | 'users';
 
 const STATUS_BADGE: Record<string, string> = {
   ACTIVE:  'bg-forest/10 text-forest',
@@ -16,6 +19,7 @@ interface ManagePageProps {
 }
 
 export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) => {
+  const [tab, setTab] = useState<Tab>('bets');
   const [selected, setSelected] = useState<Bet | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -66,17 +70,39 @@ export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) =>
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-serif font-bold text-2xl text-ink">Manage Bets</h1>
-          <p className="text-muted text-sm mt-0.5">Admin only — changes go live immediately.</p>
+          <h1 className="font-serif font-bold text-2xl text-ink">Admin</h1>
+          <p className="text-muted text-sm mt-0.5">Changes go live immediately.</p>
         </div>
-        <button
-          onClick={openNew}
-          className="bg-forest text-parchment text-sm font-semibold px-4 py-2 rounded hover:bg-forest/90 transition-colors"
-        >
-          + New bet
-        </button>
+        {tab === 'bets' && (
+          <button
+            onClick={openNew}
+            className="bg-forest text-parchment text-sm font-semibold px-4 py-2 rounded hover:bg-forest/90 transition-colors"
+          >
+            + New bet
+          </button>
+        )}
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b border-warm-border">
+        {(['bets', 'users'] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 text-sm font-semibold capitalize transition-colors border-b-2 -mb-px ${
+              tab === t
+                ? 'border-forest text-forest'
+                : 'border-transparent text-muted hover:text-ink'
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'users' ? (
+        <UserSection />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Left: bet list */}
         <div className="space-y-2">
@@ -131,6 +157,7 @@ export const ManagePage: React.FC<ManagePageProps> = ({ bets, onBetsChange }) =>
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
