@@ -314,7 +314,9 @@ def get_cup_stats_espn(players_to_find):
         print(f"   [{cup_name}] {len(relevant_ids)} relevant completed matches")
         sys.stdout.flush()
 
-        # ── 4. Fetch each match summary and extract scoring plays ─
+        # ── 4. Fetch each match summary and extract per-player stats ─
+        # ESPN soccer summaries carry player stats in boxscore.players, not in
+        # scoringPlays.participants (that structure is used for American sports).
         for event_id in relevant_ids:
             time.sleep(0.3)  # gentle rate limiting
             try:
@@ -331,23 +333,47 @@ def get_cup_stats_espn(players_to_find):
                 sys.stdout.flush()
                 continue
 
-            for play in summary.get("scoringPlays", []):
-                for participant in play.get("participants", []):
-                    athlete_name = participant.get("athlete", {}).get("displayName", "")
-                    role_id      = participant.get("type", {}).get("id", "").lower()
+            # boxscore.players → list of team entries, each with statistics groups
+            # Each statistics group has "names" (column headers) and "athletes" (rows)
+            # Typical soccer columns include "G" (goals) and "A" (assists)
+            for team_entry in summary.get("boxscore", {}).get("players", []):
+                for stat_group in team_entry.get("statistics", []):
+                    names = stat_group.get("names", [])
 
-                    for key, info in players_to_find.items():
-                        for search_term in info["search"]:
-                            if (
-                                search_term.lower() in athlete_name.lower()
-                                or athlete_name.lower() in search_term.lower()
-                            ):
-                                if key not in combined:
-                                    combined[key] = {"goals": 0, "assists": 0}
-                                if role_id in ("scorer",):
-                                    combined[key]["goals"] += 1
-                                elif role_id in ("assist", "assister"):
-                                    combined[key]["assists"] += 1
+                    # Find column indices for goals and assists
+                    # ESPN uses "G"/"A" but handle possible label variations
+                    g_idx = next(
+                        (i for i, n in enumerate(names) if n.upper() in ("G", "GLS", "GOALS")),
+                        None,
+                    )
+                    a_idx = next(
+                        (i for i, n in enumerate(names) if n.upper() in ("A", "AST", "ASSISTS")),
+                        None,
+                    )
+
+                    if g_idx is None and a_idx is None:
+                        continue
+
+                    for athlete_entry in stat_group.get("athletes", []):
+                        athlete_name = athlete_entry.get("athlete", {}).get("displayName", "")
+                        stats        = athlete_entry.get("stats", [])
+
+                        for key, info in players_to_find.items():
+                            for search_term in info["search"]:
+                                if search_term.lower() in athlete_name.lower():
+                                    if key not in combined:
+                                        combined[key] = {"goals": 0, "assists": 0}
+                                    try:
+                                        if g_idx is not None and g_idx < len(stats):
+                                            combined[key]["goals"] += int(float(stats[g_idx] or 0))
+                                    except (ValueError, TypeError):
+                                        pass
+                                    try:
+                                        if a_idx is not None and a_idx < len(stats):
+                                            combined[key]["assists"] += int(float(stats[a_idx] or 0))
+                                    except (ValueError, TypeError):
+                                        pass
+                                    break  # matched this player, move to next athlete
 
     # ── 5. Summary ───────────────────────────────────────────────
     found_any = False
