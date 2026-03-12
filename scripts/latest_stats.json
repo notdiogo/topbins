@@ -1,10 +1,15 @@
 {
-  "timestamp": "2026-03-11T23:15:35.683063",
+  "timestamp": "2026-03-12T14:21:03.585850",
   "season": "2025-2026",
   "sources": [
-    "understat.com",
+    "understat.com (EPL)",
+    "FBref (FA Cup + Carabao Cup)",
     "ESPN API"
   ],
+  "notes": {
+    "bet_02_03": "G/A totals for Zirkzee/Madueke/Cherki include EPL + FA Cup + Carabao Cup",
+    "cup_stats_source": "FBref \u2014 falls back to EPL-only if FBref is unavailable (403/timeout)"
+  },
   "players": {
     "odegaard": {
       "name": "Martin \u00d8degaard",
@@ -63,6 +68,7 @@
       "g_a": 8
     }
   },
+  "cup_stats_raw": {},
   "standings": {
     "Arsenal": {
       "position": 1,
