@@ -1,188 +1,194 @@
-
 import React, { useState, useEffect } from 'react';
 import { Bet } from '../types';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 
 export const Hero: React.FC<{ onNavigate: (id: string) => void; bets: Bet[] }> = ({ onNavigate, bets }) => {
-  const featuredBets = bets.slice(0, 4); // Show top 4
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const featuredBets = bets.slice(0, 4);
+  const [current, setCurrent] = useState(0);
+  const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % featuredBets.length);
+    const timer = setInterval(() => {
+      setCurrent(prev => (prev + 1) % featuredBets.length);
     }, 6000);
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [featuredBets.length]);
 
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % featuredBets.length);
+  const go = (index: number) => {
+    if (animating) return;
+    setAnimating(true);
+    setCurrent(index);
+    setTimeout(() => setAnimating(false), 400);
   };
 
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev === 0 ? featuredBets.length - 1 : prev - 1));
-  };
+  const next = () => go((current + 1) % featuredBets.length);
+  const prev = () => go(current === 0 ? featuredBets.length - 1 : current - 1);
 
-  const currentBet = featuredBets[currentIndex];
-  const isPvP = currentBet.type === 'PLAYER_VS_PLAYER';
-  const entityA = currentBet.entities.find(e => e.side === 'A');
-  const entityB = currentBet.entities.find(e => e.side === 'B');
+  const bet = featuredBets[current];
+  if (!bet) return null;
+
+  const entityA = bet.entities.find(e => e.side === 'A');
+  const entityB = bet.entities.find(e => e.side === 'B');
+  const isPvP = bet.type === 'PLAYER_VS_PLAYER';
+
+  const valueA = bet.metrics?.valueA ?? 0;
+  const valueB = bet.metrics?.valueB ?? 0;
+  const isInverse = bet.metrics?.isInverse;
+  const aLeads = isInverse ? valueA < valueB : valueA > valueB;
+  const bLeads = isInverse ? valueB < valueA : valueB > valueA;
+  const leader = aLeads ? entityA : bLeads ? entityB : null;
 
   return (
-    <div className="relative h-[80vh] sm:h-[95vh] w-full bg-[#050505] overflow-hidden group">
-      
-      {/* Background Texture Layer */}
-      {featuredBets.map((bet, index) => (
-        <div
-          key={`bg-${bet.id}`}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-            index === currentIndex ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {/* The Texture Background */}
-          <img
-            src={bet.heroImage}
-            alt="Atmosphere"
-            className="w-full h-full object-cover opacity-100"
-          />
-          {/* Removed overlays for all slides */}
-          <div className="hidden"></div>
-          <div className="hidden"></div>
-        </div>
-      ))}
+    <div className="bg-beige border-b border-warm-border overflow-hidden">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row min-h-[48vh] md:min-h-[52vh]">
 
-      {/* Player Images Layer - Only render for PvP and if NOT using custom hero */}
-      {isPvP && entityA && entityB && (
-        <div className="hidden md:block">
-        {featuredBets.map((bet, index) => {
-         // Skip rendering split players if this bet uses a custom hero image
-         if (bet.useCustomHero) return null;
+          {/* LEFT: Text content */}
+          <div className="flex-1 px-6 py-8 md:px-10 md:py-12 flex flex-col justify-center gap-5">
 
-         const pA = bet.entities.find(e => e.side === 'A');
-         const pB = bet.entities.find(e => e.side === 'B');
-         
-         return (
-          <div 
-            key={`players-${bet.id}`}
-            className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ${index === currentIndex ? 'opacity-100' : 'opacity-0'}`}
-          >
-            {/* Player A - Left */}
-            <div className="absolute bottom-0 -left-10 md:left-0 h-[60%] md:h-[85%] w-[50%] md:w-[40%] z-10 animate-in slide-in-from-left-10 duration-1000">
-              <img 
-                src={pA?.image} 
-                alt={pA?.name}
-                className="w-full h-full object-cover object-top opacity-80 mask-image-gradient-r"
-                style={{ 
-                  maskImage: 'linear-gradient(to right, black 50%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to right, black 50%, transparent 100%)',
-                  filter: 'grayscale(100%) contrast(120%) brightness(90%)'
-                }}
-              />
+            {/* Badges */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-forest bg-forest-light border border-forest/20 px-2.5 py-1 rounded-full uppercase tracking-wide">
+                {bet.league}
+              </span>
+              <span className="text-xs text-muted">{bet.season}</span>
             </div>
 
-            {/* Player B - Right */}
-            <div className="absolute bottom-0 -right-10 md:right-0 h-[60%] md:h-[85%] w-[50%] md:w-[40%] z-10 animate-in slide-in-from-right-10 duration-1000">
-              <img 
-                src={pB?.image} 
-                alt={pB?.name}
-                className="w-full h-full object-cover object-top opacity-80"
-                style={{ 
-                  maskImage: 'linear-gradient(to left, black 50%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to left, black 50%, transparent 100%)',
-                  filter: 'grayscale(100%) contrast(120%) brightness(90%)'
-                }}
-              />
+            {/* Title */}
+            {isPvP && entityA && entityB ? (
+              <div>
+                {/* Mobile: compact avatars + names */}
+                <div className="flex md:hidden items-center gap-3 mb-3">
+                  <div className="flex items-center gap-2">
+                    <img src={entityA.image} alt={entityA.name} className="w-10 h-10 rounded-full object-cover border-2 border-warm-border" />
+                    <span className="text-sm font-semibold text-ink">{entityA.name.split(' ').pop()}</span>
+                  </div>
+                  <span className="text-xs font-bold text-muted px-2">vs</span>
+                  <div className="flex items-center gap-2">
+                    <img src={entityB.image} alt={entityB.name} className="w-10 h-10 rounded-full object-cover border-2 border-warm-border" />
+                    <span className="text-sm font-semibold text-ink">{entityB.name.split(' ').pop()}</span>
+                  </div>
+                </div>
+                {/* Desktop: large serif headline */}
+                <h1 className="hidden md:block font-serif text-5xl lg:text-6xl font-bold text-ink leading-tight">
+                  {entityA.name.split(' ').pop()}
+                  <span className="text-muted font-normal italic text-4xl mx-3">vs</span>
+                  {entityB.name.split(' ').pop()}
+                </h1>
+                {/* Mobile title */}
+                <h1 className="md:hidden font-serif text-3xl font-bold text-ink leading-snug">
+                  {bet.title}
+                </h1>
+              </div>
+            ) : (
+              <h1 className="font-serif text-4xl md:text-5xl font-bold text-ink leading-tight">
+                {bet.title}
+              </h1>
+            )}
+
+            {/* Metric / score summary */}
+            {bet.metrics && (
+              <div className="flex items-center gap-3 flex-wrap">
+                {leader && (
+                  <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-forest bg-forest-light border border-forest/20 px-3 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-forest inline-block" />
+                    {leader.name.split(' ').pop()} leads
+                  </span>
+                )}
+                {!leader && <span className="text-sm font-semibold text-muted bg-beige border border-warm-border px-3 py-1 rounded-full">Tied</span>}
+                {bet.metrics.valueB !== undefined && (
+                  <span className="text-sm text-muted font-tabular">
+                    {valueA} – {valueB} {bet.metrics.label}
+                  </span>
+                )}
+                {bet.metrics.target !== undefined && (
+                  <span className="text-sm text-muted font-tabular">
+                    {valueA} / {bet.metrics.target} {bet.metrics.label}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* CTA */}
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className="self-start inline-flex items-center gap-2 bg-forest text-stone text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-forest-mid transition-colors"
+            >
+              View all bets
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {/* Carousel dots */}
+            <div className="flex items-center gap-2 mt-2">
+              {featuredBets.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => go(i)}
+                  className={`rounded-full transition-all duration-300 ${
+                    i === current
+                      ? 'w-6 h-2 bg-forest'
+                      : 'w-2 h-2 bg-warm-border hover:bg-muted'
+                  }`}
+                />
+              ))}
+              {/* Desktop prev/next */}
+              <div className="hidden md:flex items-center gap-1 ml-auto">
+                <button onClick={prev} className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-parchment transition-colors border border-warm-border">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button onClick={next} className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-parchment transition-colors border border-warm-border">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
-         )
-        })}
-        </div>
-      )}
 
-      {/* Controls */}
-      <div className="hidden md:flex absolute bottom-6 right-12 z-50 gap-2">
-        <button onClick={prevSlide} className="p-3 border border-white/20 bg-black/60 hover:bg-[#CCFF00] hover:text-black transition-all">
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-        <button onClick={nextSlide} className="p-3 border border-white/20 bg-black/60 hover:bg-[#CCFF00] hover:text-black transition-all">
-          <ChevronRight className="w-6 h-6" />
-        </button>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10 z-50">
-        <div 
-            key={currentIndex}
-            className="h-full bg-[#CCFF00] animate-[width_6s_linear]" 
-            style={{ width: '100%' }}
-        ></div>
-      </div>
-
-      {/* Main Text Content - Centered */}
-      <div className="absolute inset-0 z-40 flex flex-col justify-center items-center px-4 mt-32 sm:mt-48 md:mt-56 pointer-events-none">
-        
-           <div className="animate-in slide-in-from-bottom-10 duration-700 fade-in flex flex-col items-center text-center max-w-4xl">
-              
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-                <span className="bg-[#CCFF00] text-black px-3 py-1 text-xs font-black uppercase font-tech tracking-widest transform -skew-x-12 shadow-[0_0_15px_#CCFF00]">
-                  {currentBet.league}
-                </span>
-                <span className="text-white/70 font-mono text-xs uppercase tracking-widest border-l border-white/30 pl-4">
-                  Season {currentBet.season}
-                </span>
-              </div>
-
-              {isPvP && entityA && entityB ? (
-                <div className="flex flex-col items-center relative">
-                  {/* Names with massive stroke effect */}
-                  <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase italic leading-[0.85] tracking-tighter text-white mb-2 mix-blend-overlay drop-shadow-2xl">
-                    {entityA.name.split(' ').pop()}
-                  </h1>
-                  
-                  <div className="flex items-center gap-6 my-4">
-                    <div className="h-[2px] w-12 bg-[#CCFF00]"></div>
-                    <div className="text-4xl md:text-6xl font-black italic text-transparent text-stroke">VS</div>
-                    <div className="h-[2px] w-12 bg-[#CCFF00]"></div>
+          {/* RIGHT: Entity images (desktop only) */}
+          {isPvP && entityA && entityB && !bet.useCustomHero && (
+            <div className="hidden md:flex w-2/5 relative overflow-hidden bg-parchment">
+              {/* Gradient blend left edge */}
+              <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-beige to-transparent z-10 pointer-events-none" />
+              {featuredBets.map((b, i) => {
+                const pA = b.entities.find(e => e.side === 'A');
+                const pB = b.entities.find(e => e.side === 'B');
+                if (!pA || !pB || b.type !== 'PLAYER_VS_PLAYER' || b.useCustomHero) return null;
+                return (
+                  <div
+                    key={b.id}
+                    className={`absolute inset-0 flex transition-opacity duration-500 ${i === current ? 'opacity-100' : 'opacity-0'}`}
+                  >
+                    <div className="flex-1 relative overflow-hidden">
+                      <img
+                        src={pA.image}
+                        alt={pA.name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
+                    <div className="flex-1 relative overflow-hidden border-l border-parchment/30">
+                      <img
+                        src={pB.image}
+                        alt={pB.name}
+                        className="w-full h-full object-cover object-top"
+                      />
+                    </div>
                   </div>
-
-                  <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase italic leading-[0.85] tracking-tighter text-white mb-8 text-stroke drop-shadow-2xl">
-                    {entityB.name.split(' ').pop()}
-                  </h1>
-                </div>
-              ) : (
-                <h1 className="text-4xl sm:text-6xl md:text-8xl font-black uppercase italic leading-[0.85] tracking-tighter text-white mb-8 text-center">
-                  {currentBet.title}
-                </h1>
+                );
+              })}
+              {/* For custom hero or non-pvp, show heroImage */}
+              {(bet.useCustomHero || !isPvP) && (
+                <img src={bet.heroImage} alt="" className="w-full h-full object-cover" />
               )}
+            </div>
+          )}
+          {/* Custom hero image on desktop */}
+          {bet.useCustomHero && (
+            <div className="hidden md:block w-2/5 relative overflow-hidden">
+              <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-beige to-transparent z-10 pointer-events-none" />
+              <img src={bet.heroImage} alt="" className="w-full h-full object-cover" />
+            </div>
+          )}
 
-              {/* Metric Card */}
-              <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 mt-4 bg-black/60 backdrop-blur-md border border-white/10 p-6 md:skew-x-[-2deg] pointer-events-auto w-full max-w-3xl">
-                 <div className="text-center md:text-left w-full md:w-auto">
-                    <div className="text-gray-400 font-mono text-[10px] uppercase tracking-widest mb-1">Active Metric</div>
-                    <div className="text-xl font-tech font-bold uppercase text-white">
-                      {currentBet.metrics?.label}
-                    </div>
-                 </div>
-                 
-                 <div className="hidden md:block h-8 w-px bg-white/20"></div>
-
-                 <div className="text-center md:text-left w-full md:w-auto">
-                    <div className="text-gray-400 font-mono text-[10px] uppercase tracking-widest mb-1">Current Stakes</div>
-                    <div className="text-lg font-mono text-[#CCFF00] truncate max-w-[200px]">
-                      {currentBet.prize}
-                    </div>
-                 </div>
-                 
-                 <button 
-                    onClick={() => onNavigate('dashboard')}
-                    className="w-full md:w-auto md:ml-4 group flex items-center justify-center gap-2 text-black font-bold uppercase tracking-wider bg-[#CCFF00] px-6 py-3 hover:bg-white transition-colors"
-                 >
-                    <span>View</span>
-                    <ArrowRight className="w-4 h-4" />
-                 </button>
-              </div>
-
-           </div>
-
+        </div>
       </div>
     </div>
   );

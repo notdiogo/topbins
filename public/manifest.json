@@ -1,0 +1,17 @@
+{
+  "name": "TopBins",
+  "short_name": "TopBins",
+  "description": "A friendly football bet ledger",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F3EE",
+  "theme_color": "#F7F3EE",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
