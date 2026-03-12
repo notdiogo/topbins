@@ -53,6 +53,15 @@ IS_CI = os.environ.get("CI") == "true"
 # Current season
 SEASON = "2025-2026"
 
+# Players whose bets cover EPL + FA Cup + Carabao Cup (not EPL-only)
+CUP_BET_PLAYERS = ["zirkzee", "madueke", "cherki"]
+
+# FBref competition pages for English cup competitions (no auth required)
+FBREF_CUP_URLS = {
+    "FA Cup":      "https://fbref.com/en/comps/45/stats/FA-Cup-Stats",
+    "Carabao Cup": "https://fbref.com/en/comps/22/stats/League-Cup-Stats",
+}
+
 # =================================================================
 # MANUAL FOTMOB RATINGS
 # These are updated manually since FotMob doesn't expose player 
@@ -187,6 +196,150 @@ def get_player_stats_understat():
         sys.stdout.flush()
 
     return {}
+
+
+def get_cup_stats_fbref(players_to_find):
+    """
+    Fetch FA Cup + Carabao Cup goals/assists from FBref standard stats pages.
+
+    Only called for CUP_BET_PLAYERS (Zirkzee, Madueke, Cherki) whose bets
+    count G/A across EPL + FA Cup + Carabao Cup.
+
+    Returns a dict  {player_key: {"goals": int, "assists": int}}
+    with the *combined* cup totals (FA Cup + Carabao Cup together).
+    Returns {} on total failure so callers can fall back to EPL-only.
+    """
+    import requests
+    import time
+
+    try:
+        import pandas as pd
+        from io import StringIO
+    except ImportError:
+        print("   ⚠️  pandas/lxml not installed — skipping cup stats")
+        print("        Add 'pandas lxml' to the pip install step to enable cup stats.")
+        return {}
+
+    print("\n🏆 Fetching cup stats from FBref (FA Cup + Carabao Cup)...")
+    sys.stdout.flush()
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://fbref.com/",
+    }
+
+    combined = {}  # {player_key: {"goals": int, "assists": int}}
+
+    for cup_name, url in FBREF_CUP_URLS.items():
+        print(f"   Fetching {cup_name}: {url}")
+        sys.stdout.flush()
+        time.sleep(4)  # respectful delay between FBref requests
+
+        try:
+            resp = requests.get(url, timeout=25, headers=headers)
+
+            if resp.status_code == 403:
+                print(f"   ⚠️  {cup_name}: FBref blocked (403) — cup stats skipped for this competition")
+                sys.stdout.flush()
+                continue
+            if resp.status_code == 429:
+                print(f"   ⚠️  {cup_name}: FBref rate-limited (429) — cup stats skipped for this competition")
+                sys.stdout.flush()
+                continue
+            resp.raise_for_status()
+
+            # Try targeted table ID first, then fall back to largest table
+            try:
+                tables = pd.read_html(StringIO(resp.text), attrs={"id": "stats_standard"})
+            except Exception:
+                tables = []
+
+            if not tables:
+                all_tables = pd.read_html(StringIO(resp.text))
+                tables = [t for t in all_tables if len(t) > 15]
+
+            if not tables:
+                print(f"   ⚠️  {cup_name}: No stats table found in page")
+                sys.stdout.flush()
+                continue
+
+            df = tables[0]
+
+            # Flatten MultiIndex columns (FBref often uses grouped headers)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = [
+                    " ".join(str(c) for c in col).strip()
+                    for col in df.columns
+                ]
+
+            cols = list(df.columns)
+            player_col = next((c for c in cols if "Player" in str(c)), None)
+            gls_col    = next(
+                (c for c in cols if str(c).strip() in ("Gls", "Performance Gls")
+                 or str(c).endswith(" Gls")),
+                None,
+            )
+            ast_col    = next(
+                (c for c in cols if str(c).strip() in ("Ast", "Performance Ast")
+                 or str(c).endswith(" Ast")),
+                None,
+            )
+
+            if not player_col:
+                print(f"   ⚠️  {cup_name}: Could not identify player column (cols: {cols[:8]})")
+                sys.stdout.flush()
+                continue
+
+            print(f"   {cup_name}: table columns — Player={player_col}, Gls={gls_col}, Ast={ast_col}")
+            sys.stdout.flush()
+
+            for key, info in players_to_find.items():
+                found = False
+                for search_term in info["search"]:
+                    mask = df[player_col].astype(str).str.contains(
+                        search_term, case=False, na=False
+                    )
+                    matches = df[mask]
+                    if len(matches) > 0:
+                        row = matches.iloc[0]
+                        try:
+                            goals = int(float(row[gls_col])) if gls_col and pd.notna(row.get(gls_col, None)) else 0
+                        except Exception:
+                            goals = 0
+                        try:
+                            assists = int(float(row[ast_col])) if ast_col and pd.notna(row.get(ast_col, None)) else 0
+                        except Exception:
+                            assists = 0
+
+                        if key not in combined:
+                            combined[key] = {"goals": 0, "assists": 0}
+                        combined[key]["goals"]   += goals
+                        combined[key]["assists"] += assists
+                        print(f"   ✅ {cup_name} — {info['name']}: {goals}G, {assists}A")
+                        sys.stdout.flush()
+                        found = True
+                        break
+
+                if not found:
+                    print(f"   — {cup_name}: {info['name']} not found (0 appearances or name mismatch)")
+                    sys.stdout.flush()
+
+        except Exception as e:
+            print(f"   ❌ {cup_name} error: {e}")
+            sys.stdout.flush()
+
+    if combined:
+        print(f"   ✅ Cup stats fetched for: {list(combined.keys())}")
+    else:
+        print("   ⚠️  No cup stats retrieved — bet_02/bet_03 will show EPL-only totals")
+    sys.stdout.flush()
+
+    return combined
 
 
 def get_standings_espn():
@@ -589,7 +742,7 @@ def push_to_supabase(stats, standings, wins, formatted_timestamp, has_fbref_data
 def main():
     print("=" * 60)
     print("⚽ TopBins Auto Stats Update")
-    print("📚 Sources: understat.com + ESPN API")
+    print("📚 Sources: understat.com (EPL) + FBref (FA/Carabao Cup) + ESPN API")
     print(f"📅 Season: {SEASON}")
     print(f"🕐 {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"📂 Project root: {PROJECT_ROOT}")
@@ -597,8 +750,35 @@ def main():
     print("=" * 60)
     sys.stdout.flush()
 
-    # ---------- Fetch player stats ----------
+    # ---------- Fetch EPL player stats ----------
     stats = get_player_stats_understat()
+
+    # ---------- Fetch cup stats (FA Cup + Carabao Cup) ----------
+    # Only needed for bet_02 (Zirkzee vs Madueke) and bet_03 (Zirkzee vs Cherki)
+    # whose criteria explicitly count G/A across all three competitions.
+    cup_players = {k: PLAYERS[k] for k in CUP_BET_PLAYERS if k in PLAYERS}
+    cup_stats = get_cup_stats_fbref(cup_players)
+
+    # Merge cup G/A into the EPL stats for the three affected players so that
+    # all downstream logic (update_constants_ts, calculate_standings, Supabase)
+    # automatically uses the correct all-competition totals.
+    if cup_stats and stats:
+        print("\n➕ Merging cup stats into EPL totals for bet_02/bet_03 players...")
+        for key in CUP_BET_PLAYERS:
+            if key in stats and key in cup_stats:
+                cup_g = cup_stats[key].get("goals", 0)
+                cup_a = cup_stats[key].get("assists", 0)
+                if cup_g or cup_a:
+                    stats[key]["cup_goals"]   = cup_g
+                    stats[key]["cup_assists"]  = cup_a
+                    stats[key]["goals"]   += cup_g
+                    stats[key]["assists"] += cup_a
+                    stats[key]["g_a"]      = stats[key]["goals"] + stats[key]["assists"]
+                    print(
+                        f"   {PLAYERS[key]['name']}: +{cup_g}G +{cup_a}A from cups"
+                        f" → {stats[key]['g_a']} G/A total (EPL + FA Cup + Carabao Cup)"
+                    )
+        sys.stdout.flush()
 
     # ---------- Fetch standings ----------
     standings = get_standings_espn()
@@ -625,8 +805,13 @@ def main():
     output = {
         "timestamp": datetime.now().isoformat(),
         "season": SEASON,
-        "sources": ["understat.com", "ESPN API"],
+        "sources": ["understat.com (EPL)", "FBref (FA Cup + Carabao Cup)", "ESPN API"],
+        "notes": {
+            "bet_02_03": "G/A totals for Zirkzee/Madueke/Cherki include EPL + FA Cup + Carabao Cup",
+            "cup_stats_source": "FBref — falls back to EPL-only if FBref is unavailable (403/timeout)",
+        },
         "players": stats,
+        "cup_stats_raw": cup_stats,
         "standings": standings,
         "fotmob_ratings": FOTMOB_RATINGS
     }

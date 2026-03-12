@@ -37,3 +37,8 @@ prisma/*.db-journal
 # Cursor
 .cursor
 
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
