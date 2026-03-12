@@ -56,12 +56,20 @@ SEASON = "2025-2026"
 # Players whose bets cover EPL + FA Cup + Carabao Cup (not EPL-only)
 CUP_BET_PLAYERS = ["zirkzee", "madueke", "cherki"]
 
-# ESPN league slugs for English cup competitions.
-# ESPN's public API works from datacenter IPs — same as the standings endpoint.
-ESPN_CUP_LEAGUES = {
-    "FA Cup":      "eng.fa",
-    "Carabao Cup": "eng.league_cup",
+# Candidate slugs to probe for each cup competition.
+# ESPN's slug conventions vary; we probe all candidates and use the first that works.
+# Website evidence: espn.com/soccer/.../league/eng.fa and .../eng.efl_cup
+ESPN_CUP_SLUG_CANDIDATES = {
+    "FA Cup":      ["eng.fa", "eng.fa_cup", "eng.facup"],
+    "Carabao Cup": ["eng.efl_cup", "eng.league_cup", "eng.carabao"],
 }
+
+# API base paths to try. The scoreboard/summary endpoints sit under site/v2,
+# while standings sit under v2 — cup scoreboards may need the site/v2 path.
+ESPN_API_BASES = [
+    "https://site.api.espn.com/apis/site/v2/sports/soccer",
+    "https://site.api.espn.com/apis/v2/sports/soccer",
+]
 
 # Team name fragments used to filter cup matches to only those involving
 # the players we track (Zirkzee → Man Utd, Madueke → Arsenal, Cherki → Man City).
@@ -207,6 +215,30 @@ def get_player_stats_understat():
     return {}
 
 
+def _probe_espn_cup_endpoint(cup_name, slug_candidates):
+    """
+    Probe ESPN API base paths × slug candidates to find a working scoreboard URL.
+    Returns (base_url, slug) of the first combination that returns HTTP 200, or None.
+    """
+    import requests
+
+    headers = {"User-Agent": "Mozilla/5.0"}
+    for slug in slug_candidates:
+        for base in ESPN_API_BASES:
+            url = f"{base}/{slug}/scoreboard"
+            try:
+                r = requests.get(url, params={"limit": 1}, timeout=8, headers=headers)
+                if r.ok:
+                    print(f"   [{cup_name}] Working endpoint: {base}/{slug}/scoreboard")
+                    sys.stdout.flush()
+                    return base, slug
+            except Exception:
+                pass
+    print(f"   ❌ [{cup_name}] No working ESPN endpoint found (tried slugs: {slug_candidates})")
+    sys.stdout.flush()
+    return None
+
+
 def get_cup_stats_espn(players_to_find):
     """
     Fetch FA Cup + Carabao Cup goals/assists using ESPN's public match API.
@@ -215,10 +247,10 @@ def get_cup_stats_espn(players_to_find):
     we already use) — unlike FBref, which blocks cloud/CI IP ranges with 403.
 
     Strategy:
-      1. For each cup competition, fetch the season scoreboard to get all
-         completed match event IDs.
-      2. Filter to matches involving the relevant teams (Man Utd, Arsenal,
-         Man City) to minimise API calls.
+      1. Probe multiple ESPN slug/path combinations to find a working scoreboard
+         endpoint for each cup (ESPN's slugs and API paths vary by competition).
+      2. Fetch completed season matches, filtering to those involving Man Utd,
+         Arsenal, or Man City to keep API call counts low.
       3. For each relevant match, fetch the detailed summary and extract
          goal scorers and assisters from `scoringPlays`.
       4. Aggregate across both cups and return combined totals.
@@ -231,20 +263,25 @@ def get_cup_stats_espn(players_to_find):
     print("\n🏆 Fetching cup stats via ESPN match summaries (FA Cup + Carabao Cup)...")
     sys.stdout.flush()
 
-    # Season date window for 2025-26
     SEASON_DATES = "20250701-20260701"
     API_HEADERS  = {"User-Agent": "Mozilla/5.0"}
 
     combined = {}  # {player_key: {"goals": int, "assists": int}}
 
-    for cup_name, league_slug in ESPN_CUP_LEAGUES.items():
-        print(f"\n   [{cup_name}] Fetching match list (slug: {league_slug})...")
+    for cup_name, slug_candidates in ESPN_CUP_SLUG_CANDIDATES.items():
+        print(f"\n   [{cup_name}] Probing ESPN endpoints...")
         sys.stdout.flush()
 
-        # ── 1. Get all season matches ────────────────────────────
+        # ── 1. Discover working endpoint ────────────────────────
+        result = _probe_espn_cup_endpoint(cup_name, slug_candidates)
+        if result is None:
+            continue
+        api_base, slug = result
+
+        # ── 2. Fetch full season scoreboard ─────────────────────
         try:
             resp = requests.get(
-                f"https://site.api.espn.com/apis/v2/sports/soccer/{league_slug}/scoreboard",
+                f"{api_base}/{slug}/scoreboard",
                 params={"dates": SEASON_DATES, "limit": 300},
                 timeout=15,
                 headers=API_HEADERS,
@@ -252,23 +289,21 @@ def get_cup_stats_espn(players_to_find):
             resp.raise_for_status()
             events = resp.json().get("events", [])
         except Exception as e:
-            print(f"   ❌ [{cup_name}] Scoreboard fetch failed: {e}")
+            print(f"   ❌ [{cup_name}] Season scoreboard fetch failed: {e}")
             sys.stdout.flush()
             continue
 
         print(f"   [{cup_name}] {len(events)} total events returned")
         sys.stdout.flush()
 
-        # ── 2. Filter to completed matches involving our teams ───
+        # ── 3. Filter to completed matches involving our teams ───
         relevant_ids = []
         for event in events:
             comps = event.get("competitions", [])
             if not comps:
                 continue
             comp = comps[0]
-            # Skip unfinished matches
-            status = comp.get("status", {}).get("type", {})
-            if not status.get("completed", False):
+            if not comp.get("status", {}).get("type", {}).get("completed", False):
                 continue
             for competitor in comp.get("competitors", []):
                 team_name = competitor.get("team", {}).get("displayName", "").lower()
@@ -279,12 +314,12 @@ def get_cup_stats_espn(players_to_find):
         print(f"   [{cup_name}] {len(relevant_ids)} relevant completed matches")
         sys.stdout.flush()
 
-        # ── 3. Fetch each match summary and extract scoring plays ─
+        # ── 4. Fetch each match summary and extract scoring plays ─
         for event_id in relevant_ids:
             time.sleep(0.3)  # gentle rate limiting
             try:
                 resp = requests.get(
-                    f"https://site.api.espn.com/apis/site/v2/sports/soccer/{league_slug}/summary",
+                    f"{api_base}/{slug}/summary",
                     params={"event": event_id},
                     timeout=15,
                     headers=API_HEADERS,
@@ -314,7 +349,7 @@ def get_cup_stats_espn(players_to_find):
                                 elif role_id in ("assist", "assister"):
                                     combined[key]["assists"] += 1
 
-    # ── 4. Summary ───────────────────────────────────────────────
+    # ── 5. Summary ───────────────────────────────────────────────
     found_any = False
     for key, data in combined.items():
         if data["goals"] or data["assists"]:
@@ -324,7 +359,7 @@ def get_cup_stats_espn(players_to_find):
             found_any = True
 
     if combined and not found_any:
-        print("   — Cup-bet players found in data but have 0 G/A in cups so far this season")
+        print("   — Cup-bet players found in data but 0 G/A in cups so far this season")
     elif not combined:
         print("   ⚠️  No cup stats retrieved — bet_02/bet_03 will show EPL-only totals")
     sys.stdout.flush()
