@@ -4,11 +4,16 @@ import { supabase } from '../lib/supabase';
 
 const ADMIN_EMAIL = 'diogoramos@me.com';
 
-// Capture URL before Supabase clears it. With flowType:'implicit', invite links
-// arrive as #access_token=...&type=invite in the hash.
+// Capture URL at module load before Supabase potentially clears it.
+// PKCE invite links arrive as ?code=xxx (no type in URL).
+// Implicit invite links arrive as #access_token=...&type=invite.
+// In this app, a ?code= on initial load can only come from an email invite.
+const initialSearch = typeof window !== 'undefined' ? window.location.search : '';
 const initialHash = typeof window !== 'undefined' ? window.location.hash : '';
 const isInviteOrRecovery =
-  initialHash.includes('type=invite') || initialHash.includes('type=recovery');
+  new URLSearchParams(initialSearch).has('code') ||
+  initialHash.includes('type=invite') ||
+  initialHash.includes('type=recovery');
 
 export interface AuthHook {
   user: User | null;
@@ -22,8 +27,6 @@ export interface AuthHook {
 
 export function useAuth(): AuthHook {
   const [user, setUser] = useState<User | null>(null);
-  // Stay loading until we've heard from onAuthStateChange when an invite is in flight,
-  // so the app never briefly flashes the login page before the session arrives.
   const [isLoading, setIsLoading] = useState(true);
   const [needsPasswordSet, setNeedsPasswordSet] = useState(isInviteOrRecovery);
 
@@ -33,17 +36,15 @@ export function useAuth(): AuthHook {
       return;
     }
 
-    // onAuthStateChange fires as soon as the session is resolved (including
-    // after Supabase processes a hash token), so we rely on it as the single
-    // source of truth rather than getSession() + a separate listener.
+    // onAuthStateChange is the single source of truth. For PKCE invite links
+    // Supabase automatically exchanges the ?code= for a session before firing.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    // Fallback: if no auth event arrives within 3s (e.g. no token in URL and
-    // nothing in storage), stop showing the spinner and go to the login page.
-    const timeout = setTimeout(() => setIsLoading(false), 3000);
+    // Fallback: stop the spinner if no auth event arrives (no token, no stored session).
+    const timeout = setTimeout(() => setIsLoading(false), 5000);
 
     return () => {
       subscription.unsubscribe();
@@ -66,6 +67,8 @@ export function useAuth(): AuthHook {
     const { error } = await supabase.auth.updateUser({ password });
     if (error) return error.message;
     setNeedsPasswordSet(false);
+    // Clean up the invite URL so a page refresh doesn't re-trigger this flow.
+    window.history.replaceState({}, '', window.location.pathname);
     return null;
   };
 
