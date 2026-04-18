@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-17T23:29:56.051161",
+  "timestamp": "2026-04-18T23:24:43.492505",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -22,8 +22,8 @@
       "name": "Bruno Fernandes",
       "team": "Manchester Utd",
       "goals": 8,
-      "assists": 17,
-      "g_a": 25
+      "assists": 18,
+      "g_a": 26
     },
     "zirkzee": {
       "name": "Joshua Zirkzee",
@@ -63,9 +63,9 @@
     "cunha": {
       "name": "Matheus Cunha",
       "team": "Wolves",
-      "goals": 7,
+      "goals": 8,
       "assists": 2,
-      "g_a": 9
+      "g_a": 10
     }
   },
   "cup_stats_raw": {},
@@ -80,7 +80,7 @@
     },
     "Manchester United": {
       "position": 3,
-      "points": 55
+      "points": 58
     },
     "Liverpool": {
       "position": 5,
