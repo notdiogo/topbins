@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-21T23:27:04.057661",
+  "timestamp": "2026-04-22T23:37:39.056451",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -70,13 +70,13 @@
   },
   "cup_stats_raw": {},
   "standings": {
-    "Arsenal": {
+    "Manchester City": {
       "position": 1,
       "points": 70
     },
-    "Manchester City": {
+    "Arsenal": {
       "position": 2,
-      "points": 67
+      "points": 70
     },
     "Manchester United": {
       "position": 3,
