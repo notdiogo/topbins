@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-24T23:31:14.311906",
+  "timestamp": "2026-04-25T23:27:41.175066",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -70,11 +70,11 @@
   },
   "cup_stats_raw": {},
   "standings": {
-    "Manchester City": {
-      "position": 1,
-      "points": 70
-    },
     "Arsenal": {
+      "position": 1,
+      "points": 73
+    },
+    "Manchester City": {
       "position": 2,
       "points": 70
     },
@@ -83,8 +83,8 @@
       "points": 58
     },
     "Liverpool": {
-      "position": 5,
-      "points": 55
+      "position": 4,
+      "points": 58
     },
     "Wolves": {
       "position": 20,
