@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-04-26T23:29:06.683701",
+  "timestamp": "2026-04-27T23:41:47.388072",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -22,8 +22,8 @@
       "name": "Bruno Fernandes",
       "team": "Manchester Utd",
       "goals": 8,
-      "assists": 18,
-      "g_a": 26
+      "assists": 19,
+      "g_a": 27
     },
     "zirkzee": {
       "name": "Joshua Zirkzee",
@@ -80,7 +80,7 @@
     },
     "Manchester United": {
       "position": 3,
-      "points": 58
+      "points": 61
     },
     "Liverpool": {
       "position": 4,
