@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-02T23:32:55.277768",
+  "timestamp": "2026-05-03T23:33:58.704313",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -63,9 +63,9 @@
     "cunha": {
       "name": "Matheus Cunha",
       "team": "Wolves",
-      "goals": 8,
+      "goals": 9,
       "assists": 2,
-      "g_a": 10
+      "g_a": 11
     }
   },
   "cup_stats_raw": {},
@@ -80,7 +80,7 @@
     },
     "Manchester United": {
       "position": 3,
-      "points": 61
+      "points": 64
     },
     "Liverpool": {
       "position": 4,
