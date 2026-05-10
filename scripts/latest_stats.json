@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-09T23:35:59.573015",
+  "timestamp": "2026-05-10T23:39:55.349212",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -15,8 +15,8 @@
       "name": "Martin \u00d8degaard",
       "team": "Arsenal",
       "goals": 1,
-      "assists": 5,
-      "g_a": 6
+      "assists": 6,
+      "g_a": 7
     },
     "bruno": {
       "name": "Bruno Fernandes",
@@ -72,7 +72,7 @@
   "standings": {
     "Arsenal": {
       "position": 1,
-      "points": 76
+      "points": 79
     },
     "Manchester City": {
       "position": 2,
