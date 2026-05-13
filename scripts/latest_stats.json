@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-12T23:49:28.778903",
+  "timestamp": "2026-05-13T23:48:41.917520",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -43,8 +43,8 @@
       "name": "Rayan Cherki",
       "team": "Manchester City",
       "goals": 4,
-      "assists": 11,
-      "g_a": 15
+      "assists": 12,
+      "g_a": 16
     },
     "frimpong": {
       "name": "Jeremie Frimpong",
@@ -76,7 +76,7 @@
     },
     "Manchester City": {
       "position": 2,
-      "points": 74
+      "points": 77
     },
     "Manchester United": {
       "position": 3,
