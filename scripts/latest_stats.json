@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-23T23:46:29.464819",
+  "timestamp": "2026-05-24T23:50:13.105990",
   "season": "2025-2026",
   "sources": [
     "understat.com (EPL)",
@@ -21,9 +21,9 @@
     "bruno": {
       "name": "Bruno Fernandes",
       "team": "Manchester Utd",
-      "goals": 8,
-      "assists": 20,
-      "g_a": 28
+      "goals": 9,
+      "assists": 21,
+      "g_a": 30
     },
     "zirkzee": {
       "name": "Joshua Zirkzee",
@@ -35,9 +35,9 @@
     "madueke": {
       "name": "Noni Madueke",
       "team": "Arsenal",
-      "goals": 1,
+      "goals": 2,
       "assists": 1,
-      "g_a": 2
+      "g_a": 3
     },
     "cherki": {
       "name": "Rayan Cherki",
@@ -72,7 +72,7 @@
   "standings": {
     "Arsenal": {
       "position": 1,
-      "points": 82
+      "points": 85
     },
     "Manchester City": {
       "position": 2,
@@ -80,15 +80,15 @@
     },
     "Manchester United": {
       "position": 3,
-      "points": 68
+      "points": 71
     },
     "Liverpool": {
       "position": 5,
-      "points": 59
+      "points": 60
     },
     "Wolves": {
       "position": 20,
-      "points": 19
+      "points": 20
     }
   },
   "fotmob_ratings": {
