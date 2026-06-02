@@ -2,7 +2,7 @@
 import { NavItem, SectionId, Bet, UserStats, MonthlyStanding } from './types';
 
 // Auto-updated by fetch_and_update.py
-export const LAST_UPDATED = 'Sun May 31, 6:55 PM EST';
+export const LAST_UPDATED = 'Mon Jun 01, 7:05 PM EST';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'HQ', id: SectionId.HOME },
@@ -259,6 +259,15 @@ export const LEAGUE_HISTORY: MonthlyStanding[] = [
   },
   {
     month: 'MAY',
+    year: '2026',
+    scores: {
+      Diogo: 3,
+      Shiv: 2,
+      Mitch: 1
+    }
+  },
+  {
+    month: 'JUN',
     year: '2026',
     scores: {
       Diogo: 3,
