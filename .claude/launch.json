@@ -1,0 +1,16 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "topbins-dev",
+      "runtimeExecutable": "/Users/diogo/.topbins-node/bin/node",
+      "runtimeArgs": [
+        "/Users/diogo/Desktop/Claude/Claude Code/topbins/node_modules/vite/bin/vite.js",
+        "--port",
+        "3000",
+        "--strictPort"
+      ],
+      "port": 3000
+    }
+  ]
+}

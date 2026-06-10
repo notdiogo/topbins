@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Read(//Users/diogo/**)",
+      "Bash(command -v brew)",
+      "Read(//usr/local/bin/**)",
+      "Bash(brew list *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(~/.topbins-node/bin/npm run *)",
+      "Bash(~/.topbins-node/bin/node ~/.topbins-node/bin/npm run build)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git reset *)"
+    ]
+  }
+}
