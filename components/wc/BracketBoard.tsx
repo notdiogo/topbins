@@ -75,7 +75,7 @@ export const BracketBoard: React.FC<Props> = ({ entries, actual, teams }) => {
       {stage === 'group' ? (
         <GroupStage entry={entry} actual={actual} label={fullName} />
       ) : (
-        <Knockout entry={entry} actual={actual} label={label} sourceName={sourceLabel} />
+        <Knockout entry={entry} actual={actual} label={fullName} sourceName={sourceLabel} />
       )}
     </div>
   );
