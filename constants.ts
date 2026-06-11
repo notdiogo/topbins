@@ -222,57 +222,56 @@ export const MOCK_BETS: Bet[] = [
     }
   },
   {
-    id: 'bet_wc_01',
-    slug: 'mbappe-vs-vinicius',
-    title: 'Mbappé vs Vinícius Jr',
+    id: 'bet_wc_03',
+    slug: 'ronaldo-goals-threshold',
+    title: 'Ronaldo — 4 Goal Contributions',
     league: 'World Cup',
     season: '2026',
     group: WORLD_CUP_2026,
-    type: 'PLAYER_VS_PLAYER',
-    criteria: "Most goals scored across the World Cup 2026 tournament. Penalty shootouts excluded.",
-    voidConditions: "Void for either player if their nation fails to reach the group stage.",
-    prize: "Loser buys the final-night dinner.",
+    type: 'PLAYER_THRESHOLD',
+    criteria: "Cristiano Ronaldo to reach 4 or more goal contributions (goals + 0.5 per assist) at the World Cup 2026. Penalty shootout goals and assists do not count.",
+    voidConditions: "Void if Portugal fail to qualify or if Ronaldo is ruled out before the tournament begins.",
+    prize: "Prize to be decided.",
     status: 'ACTIVE',
-    heroImage: "https://picsum.photos/seed/wc-final/1200/800",
+    heroImage: "https://picsum.photos/seed/ronaldo-wc/1200/800",
     useCustomHero: true,
     participants: [
-      { name: 'Diogo', side: 'A' },
-      { name: 'Shiv', side: 'B' }
+      { name: 'Shiv', side: 'A' },
+      { name: 'Diogo', side: 'B' }
     ],
     entities: [
-      { name: 'Kylian Mbappé', type: 'PLAYER', side: 'A', image: "https://picsum.photos/seed/mbappe/240" },
-      { name: 'Vinícius Júnior', type: 'PLAYER', side: 'B', image: "https://picsum.photos/seed/vinicius/240" }
+      { name: 'Cristiano Ronaldo', type: 'PLAYER', side: 'A', image: "/ronaldo-avatar.jpg" }
     ],
     metrics: {
-      label: 'Goals',
+      label: 'Goal contributions',
       valueA: 0,
       valueB: 0
     }
   },
   {
-    id: 'bet_wc_02',
-    slug: 'argentina-vs-brazil-progress',
-    title: 'Argentina vs Brazil',
+    id: 'bet_wc_04',
+    slug: 'ronaldo-vs-messi-goal-contributions',
+    title: 'Ronaldo vs Messi — Goal Contributions',
     league: 'World Cup',
     season: '2026',
     group: WORLD_CUP_2026,
-    type: 'TEAM_VS_TEAM',
-    criteria: "Which of the two South American giants is eliminated later in the tournament.",
-    voidConditions: "Standard rules apply. A final meeting is settled by the result.",
-    prize: "Bragging rights and a custom jersey for the winner.",
+    type: 'PLAYER_VS_PLAYER',
+    criteria: "Who finishes the World Cup 2026 with more total goal contributions (goals + assists). Penalty shootout goals and assists do not count.",
+    voidConditions: "Void if either player does not participate. If one nation is eliminated early through no fault of the player, the bet still stands.",
+    prize: "Prize to be decided.",
     status: 'ACTIVE',
-    heroImage: "https://picsum.photos/seed/wc-arg-bra/1200/800",
+    heroImage: "https://picsum.photos/seed/ronaldo-messi/1200/800",
     useCustomHero: true,
     participants: [
-      { name: 'Mitch', side: 'A' },
-      { name: 'Diogo', side: 'B' }
+      { name: 'Shiv', side: 'A' },
+      { name: 'Mitch', side: 'B' }
     ],
     entities: [
-      { name: 'Argentina', type: 'TEAM', side: 'A', image: "https://picsum.photos/seed/argentina/240" },
-      { name: 'Brazil', type: 'TEAM', side: 'B', image: "https://picsum.photos/seed/brazil/240" }
+      { name: 'Cristiano Ronaldo', type: 'PLAYER', side: 'A', image: "/ronaldo-avatar.jpg" },
+      { name: 'Lionel Messi', type: 'PLAYER', side: 'B', image: "/messi-avatar.jpg" }
     ],
     metrics: {
-      label: 'Round reached',
+      label: 'Goal contributions',
       valueA: 0,
       valueB: 0
     }
