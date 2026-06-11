@@ -2,6 +2,7 @@ import React from 'react';
 import { PredictionCategory } from '../../types';
 import { predictionPoints } from '../../lib/scoring';
 import { Info, Check } from 'lucide-react';
+import { formatCountryWithEmoji } from '../../lib/countryEmoji';
 
 const PEOPLE = [
   { name: 'Diogo', varName: '--p-diogo' },
@@ -27,7 +28,7 @@ const CategoryLabel: React.FC<{ cat: PredictionCategory }> = ({ cat }) => (
     )}
     {cat.status === 'SETTLED' && cat.correctAnswer && (
       <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-forest-light px-2 py-0.5 text-[11px] font-semibold text-forest">
-        <Check className="h-3 w-3" /> {cat.correctAnswer}
+        <Check className="h-3 w-3" /> {formatCountryWithEmoji(cat.correctAnswer)}
       </span>
     )}
   </div>
@@ -44,7 +45,7 @@ const Pick: React.FC<{ cat: PredictionCategory; name: string }> = ({ cat, name }
       }`}
     >
       {correct && <Check className="h-3.5 w-3.5" />}
-      {pick}
+      {formatCountryWithEmoji(pick)}
     </span>
   );
 };

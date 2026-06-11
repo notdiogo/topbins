@@ -21,9 +21,7 @@ export const BetCard: React.FC<BetCardProps> = ({ bet }) => {
   const Icon = config.icon;
 
   return (
-    <div className={`relative group bg-zinc-900/50 backdrop-blur-sm border border-white/10 hover:border-white/30 transition-all duration-300 overflow-hidden p-6 flex flex-col justify-between h-full`}>
-      
-      <div className={`absolute top-0 left-0 w-1 h-full ${config.color.replace('text-', 'bg-')}`}></div>
+    <div className={`relative group bg-zinc-900/50 backdrop-blur-sm border border-white/10 hover:border-white/30 overflow-hidden p-6 flex flex-col justify-between h-full`}>
       
       <div className="flex justify-between items-start mb-6 relative z-10">
         <div className="flex flex-col">

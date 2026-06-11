@@ -34,24 +34,26 @@ export interface KnockoutMatch {
 const g = (group: GroupId, pos: 1 | 2 | 3): Source => ({ kind: 'group', group, pos });
 const w = (matchId: string): Source => ({ kind: 'match', matchId });
 
-// Round of 32 — uses all 12 group winners, all 12 runners-up and 8 best thirds.
+// Round of 32 — actual WC 2026 bracket seeding.
+// Winners (1st), runners-up (2nd), and 8 best third-place (3rd) teams advance.
+// Bracket pairs: R32-1+R32-2 → R16-1, R32-3+R32-4 → R16-2, etc.
 export const R32: KnockoutMatch[] = [
-  { id: 'R32-1',  round: 'R32', a: g('A', 1), b: g('B', 2) },
-  { id: 'R32-2',  round: 'R32', a: g('C', 1), b: g('D', 2) },
-  { id: 'R32-3',  round: 'R32', a: g('E', 1), b: g('F', 2) },
-  { id: 'R32-4',  round: 'R32', a: g('G', 1), b: g('H', 2) },
-  { id: 'R32-5',  round: 'R32', a: g('I', 1), b: g('J', 2) },
-  { id: 'R32-6',  round: 'R32', a: g('K', 1), b: g('L', 2) },
-  { id: 'R32-7',  round: 'R32', a: g('B', 1), b: g('A', 3) },
-  { id: 'R32-8',  round: 'R32', a: g('D', 1), b: g('C', 3) },
-  { id: 'R32-9',  round: 'R32', a: g('F', 1), b: g('E', 3) },
-  { id: 'R32-10', round: 'R32', a: g('H', 1), b: g('G', 3) },
-  { id: 'R32-11', round: 'R32', a: g('J', 1), b: g('A', 2) },
-  { id: 'R32-12', round: 'R32', a: g('L', 1), b: g('C', 2) },
-  { id: 'R32-13', round: 'R32', a: g('E', 2), b: g('B', 3) },
-  { id: 'R32-14', round: 'R32', a: g('G', 2), b: g('D', 3) },
-  { id: 'R32-15', round: 'R32', a: g('I', 2), b: g('F', 3) },
-  { id: 'R32-16', round: 'R32', a: g('K', 2), b: g('H', 3) },
+  { id: 'R32-1',  round: 'R32', a: g('I', 1), b: g('F', 3) },
+  { id: 'R32-2',  round: 'R32', a: g('E', 1), b: g('D', 3) },
+  { id: 'R32-3',  round: 'R32', a: g('A', 2), b: g('B', 2) },
+  { id: 'R32-4',  round: 'R32', a: g('F', 1), b: g('C', 2) },
+  { id: 'R32-5',  round: 'R32', a: g('L', 2), b: g('K', 2) },
+  { id: 'R32-6',  round: 'R32', a: g('H', 1), b: g('J', 2) },
+  { id: 'R32-7',  round: 'R32', a: g('D', 1), b: g('E', 3) },
+  { id: 'R32-8',  round: 'R32', a: g('G', 1), b: g('A', 3) },
+  { id: 'R32-9',  round: 'R32', a: g('I', 3), b: g('E', 2) },
+  { id: 'R32-10', round: 'R32', a: g('C', 1), b: g('F', 2) },
+  { id: 'R32-11', round: 'R32', a: g('L', 1), b: g('I', 2) },
+  { id: 'R32-12', round: 'R32', a: g('A', 1), b: g('C', 3) },
+  { id: 'R32-13', round: 'R32', a: g('J', 1), b: g('H', 2) },
+  { id: 'R32-14', round: 'R32', a: g('G', 2), b: g('D', 2) },
+  { id: 'R32-15', round: 'R32', a: g('K', 1), b: g('L', 3) },
+  { id: 'R32-16', round: 'R32', a: g('B', 1), b: g('J', 3) },
 ];
 
 const pairUp = (round: KnockoutRound, prefix: string, prev: KnockoutMatch[]): KnockoutMatch[] => {

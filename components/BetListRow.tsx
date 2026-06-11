@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bet } from '../types';
 import { ChevronRight } from 'lucide-react';
+import { formatCountryWithEmoji } from '../lib/countryEmoji';
 
 const ordinal = (n: number) => {
   const j = n % 10, k = n % 100;
@@ -58,14 +59,9 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group bg-stone border border-warm-border rounded-xl shadow-sm hover:shadow-md hover:border-forest/40 transition-all duration-200 cursor-pointer overflow-hidden"
+      className="group bg-stone border border-warm-border rounded-xl shadow-sm hover:shadow-md hover:border-forest/40 cursor-pointer overflow-hidden"
     >
-      {/* Green left accent bar on hover */}
       <div className="flex flex-col sm:flex-row">
-
-        {/* LEFT accent stripe */}
-        <div className="hidden sm:block w-1 bg-warm-border group-hover:bg-forest transition-colors rounded-l-xl" />
-
         <div className="flex-1 p-5 md:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6">
 
           {/* Entity avatars */}
@@ -127,7 +123,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                   <div className="flex flex-col gap-1.5">
                     {/* Player A */}
                     <div className="flex items-center gap-2.5">
-                      <span className="text-xs text-muted w-20 truncate shrink-0">{entityA?.name.split(' ').pop()}</span>
+                      <span className="text-xs text-muted w-20 truncate shrink-0">{formatCountryWithEmoji(entityA?.name.split(' ').pop())}</span>
                       <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden border border-warm-border">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${isWinningA ? 'bg-forest' : 'bg-muted/40'}`}
@@ -141,7 +137,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                     {/* Player B */}
                     {entityB && (
                       <div className="flex items-center gap-2.5">
-                        <span className="text-xs text-muted w-20 truncate shrink-0">{entityB?.name.split(' ').pop()}</span>
+                        <span className="text-xs text-muted w-20 truncate shrink-0">{formatCountryWithEmoji(entityB?.name.split(' ').pop())}</span>
                         <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden border border-warm-border">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${isWinningB ? 'bg-forest' : 'bg-muted/40'}`}
@@ -161,10 +157,10 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                   <span>{metrics.label}</span>
                   {isTied && <span className="text-amber-600 font-semibold">Tied</span>}
                   {!isTied && isWinningA && entityA && (
-                    <span className="text-forest font-semibold">{entityA.name.split(' ').pop()} leads</span>
+                    <span className="text-forest font-semibold">{formatCountryWithEmoji(entityA.name.split(' ').pop())} leads</span>
                   )}
                   {!isTied && isWinningB && entityB && (
-                    <span className="text-forest font-semibold">{entityB.name.split(' ').pop()} leads</span>
+                    <span className="text-forest font-semibold">{formatCountryWithEmoji(entityB.name.split(' ').pop())} leads</span>
                   )}
                 </div>
               </div>
@@ -173,9 +169,9 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
             {/* Participants + prize row */}
             <div className="flex items-end justify-between gap-2 flex-wrap pt-1 border-t border-warm-border/60">
               <div className="text-xs text-muted leading-relaxed">
-                <span className="font-medium text-ink">{sideA}</span> backs {entityA?.name.split(' ').pop()}
+                <span className="font-medium text-ink">{sideA}</span> backs {formatCountryWithEmoji(entityA?.name.split(' ').pop())}
                 {sideB && entityB && (
-                  <> · <span className="font-medium text-ink">{sideB}</span> backs {entityB?.name.split(' ').pop()}</>
+                  <> · <span className="font-medium text-ink">{sideB}</span> backs {formatCountryWithEmoji(entityB?.name.split(' ').pop())}</>
                 )}
               </div>
               <div className="flex items-center gap-1.5 text-muted shrink-0">

@@ -22,27 +22,31 @@ interface DataContextValue {
   setBracketActual: React.Dispatch<React.SetStateAction<BracketActual>>;
   leagueHistory: MonthlyStanding[];
   lastUpdated: string;
+  isLoading: boolean;
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [bets, setBets] = useState<Bet[]>(MOCK_BETS);
-  const [predictions, setPredictions] = useState<PredictionCategory[]>(MOCK_PREDICTIONS);
-  const [teams, setTeams] = useState<WCTeam[]>(MOCK_TEAMS);
-  const [bracketEntries, setBracketEntries] = useState<BracketEntry[]>(MOCK_BRACKET_ENTRIES);
+  const [isLoading, setIsLoading] = useState(true);
+  const [bets, setBets] = useState<Bet[]>([]);
+  const [predictions, setPredictions] = useState<PredictionCategory[]>([]);
+  const [teams, setTeams] = useState<WCTeam[]>([]);
+  const [bracketEntries, setBracketEntries] = useState<BracketEntry[]>([]);
   const [bracketActual, setBracketActual] = useState<BracketActual>(MOCK_BRACKET_ACTUAL);
-  const [leagueHistory, setLeagueHistory] = useState<MonthlyStanding[]>(LEAGUE_HISTORY);
+  const [leagueHistory, setLeagueHistory] = useState<MonthlyStanding[]>([]);
   const [lastUpdated, setLastUpdated] = useState(LAST_UPDATED);
 
   useEffect(() => {
-    fetchBets().then((data) => { if (data.length > 0) setBets(data); });
-    fetchPredictions().then((data) => { if (data.length > 0) setPredictions(data); });
-    fetchTeams().then((data) => { if (data.length > 0) setTeams(data); });
-    fetchBracketEntries().then((data) => { if (data.length > 0) setBracketEntries(data); });
-    fetchBracketActual().then((data) => { if (data) setBracketActual(data); });
-    fetchLeagueHistory().then((data) => { if (data.length > 0) setLeagueHistory(data); });
-    fetchLastUpdated().then((val) => { if (val) setLastUpdated(val); });
+    Promise.all([
+      fetchBets().then((data) => { setBets(data.length > 0 ? data : MOCK_BETS); }),
+      fetchPredictions().then((data) => { setPredictions(data.length > 0 ? data : MOCK_PREDICTIONS); }),
+      fetchTeams().then((data) => { setTeams(data.length > 0 ? data : MOCK_TEAMS); }),
+      fetchBracketEntries().then((data) => { setBracketEntries(data.length > 0 ? data : MOCK_BRACKET_ENTRIES); }),
+      fetchBracketActual().then((data) => { setBracketActual(data || MOCK_BRACKET_ACTUAL); }),
+      fetchLeagueHistory().then((data) => { setLeagueHistory(data.length > 0 ? data : LEAGUE_HISTORY); }),
+      fetchLastUpdated().then((val) => { setLastUpdated(val || LAST_UPDATED); }),
+    ]).finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -54,6 +58,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         bracketEntries, setBracketEntries,
         bracketActual, setBracketActual,
         leagueHistory, lastUpdated,
+        isLoading,
       }}
     >
       {children}

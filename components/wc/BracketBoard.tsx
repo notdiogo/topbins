@@ -3,6 +3,7 @@ import { WCTeam, BracketEntry, BracketActual } from '../../types';
 import { GROUPS, MATCHES_BY_ROUND, ROUNDS, resolveTeam, sourceLabel, KnockoutRound } from '../../lib/wcBracket';
 import { bracketPoints } from '../../lib/scoring';
 import { Check } from 'lucide-react';
+import { formatCountryWithEmoji } from '../../lib/countryEmoji';
 
 const PERSON_VAR: Record<string, string> = { Diogo: '--p-diogo', Mitch: '--p-mitch', Shiv: '--p-shiv' };
 const personColor = (name: string) => `rgb(var(${PERSON_VAR[name] ?? '--accent'}))`;
@@ -108,7 +109,7 @@ const GroupStage: React.FC<{
                   }`}
                 >
                   <span className="font-mono text-xs tabular-nums opacity-70">{i + 1}</span>
-                  <span className={qualifierSlot ? 'font-semibold' : ''}>{label(id)}</span>
+                  <span className={qualifierSlot ? 'font-semibold' : ''}>{formatCountryWithEmoji(label(id))}</span>
                   {correctQualifier && <Check className="ml-auto h-3.5 w-3.5" />}
                 </li>
               );
@@ -156,7 +157,7 @@ const Knockout: React.FC<{
                           : isPick ? 'bg-beige font-semibold text-ink' : 'text-muted'
                         }`}
                       >
-                        <span>{id ? label(id) : sourceName(src)}</span>
+                        <span>{id ? formatCountryWithEmoji(label(id)) : sourceName(src)}</span>
                         {correct && <Check className="h-3 w-3" />}
                       </div>
                     );

@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { useData } from '../context/DataContext';
-import { Hero } from '../components/Hero';
 import { BetList } from '../components/BetList';
 import { Reveal } from '../components/Reveal';
 import { PredictionsTable } from '../components/wc/PredictionsTable';
@@ -38,7 +37,6 @@ export const HomePage: React.FC = () => {
 
   return (
     <>
-      <Hero />
 
       <Section
         id="bets"
