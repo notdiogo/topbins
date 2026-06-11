@@ -2,16 +2,12 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Home } from 'lucide-react';
 
-interface NavbarProps {
-  lastUpdated: string;
-}
-
 const SEASONS = [
   { slug: 'epl-25-26', label: 'Season 25/26' },
   { slug: 'epl-26-27', label: 'Season 26/27' },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ lastUpdated }) => {
+export const Navbar: React.FC = () => {
   const isHome = useLocation().pathname === '/';
 
   const link = (active: boolean) =>

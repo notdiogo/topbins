@@ -5,7 +5,7 @@ import { useData } from '../context/DataContext';
 import { Hero } from './Hero';
 
 export const Layout: React.FC = () => {
-  const { lastUpdated, isLoading } = useData();
+  const { isLoading } = useData();
   const isHome = useLocation().pathname === '/';
 
   if (isLoading) {
@@ -24,12 +24,12 @@ export const Layout: React.FC = () => {
       {isHome && (
         <>
           <Hero />
-          <Navbar lastUpdated={lastUpdated} />
+          <Navbar />
         </>
       )}
       {!isHome && (
         <>
-          <Navbar lastUpdated={lastUpdated} />
+          <Navbar />
           <div className="pt-16">
             <Outlet />
           </div>
