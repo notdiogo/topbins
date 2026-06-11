@@ -3,7 +3,8 @@ import { Bet, PredictionCategory } from '../../types';
 import { BetForm } from './BetForm';
 import { PredictionForm } from './PredictionForm';
 import { BracketAdmin } from './BracketAdmin';
-import { updateBet, createBet, updatePrediction, createPrediction } from '../../services/supabaseService';
+import { updateBet, createBet, deleteBet, updatePrediction, createPrediction, deletePrediction } from '../../services/supabaseService';
+import { Trash2 } from 'lucide-react';
 
 const STATUS_BADGE: Record<string, string> = {
   ACTIVE:  'bg-forest/10 text-forest',
@@ -84,6 +85,21 @@ const BetsPanel: React.FC<{ bets: Bet[]; onBetsChange: (b: Bet[]) => void }> = (
     }
   };
 
+  const handleDelete = async () => {
+    if (!selected || isNew) return;
+    if (!window.confirm(`Delete "${selected.title}"? This cannot be undone.`)) return;
+    setSaveError(null); setIsSaving(true);
+    try {
+      await deleteBet(selected.id);
+      onBetsChange(bets.filter((b) => b.id !== selected.id));
+      closeForm();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const showForm = isNew || selected !== null;
 
   return (
@@ -116,6 +132,15 @@ const BetsPanel: React.FC<{ bets: Bet[]; onBetsChange: (b: Bet[]) => void }> = (
             <h2 className="font-display font-bold text-lg text-ink mb-5">{isNew ? 'New bet' : `Edit: ${selected?.title}`}</h2>
             {saveError && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-4">{saveError}</p>}
             <BetForm initial={isNew ? null : selected} onSave={handleSave} onCancel={closeForm} isSaving={isSaving} />
+            {!isNew && selected && (
+              <button
+                onClick={handleDelete}
+                disabled={isSaving}
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" /> Delete bet
+              </button>
+            )}
           </div>
         ) : (
           <div className="hidden lg:flex items-center justify-center h-48 border border-dashed border-warm-border rounded-xl">
@@ -158,6 +183,21 @@ const PredictionsPanel: React.FC<{ predictions: PredictionCategory[]; onPredicti
     }
   };
 
+  const handleDelete = async () => {
+    if (!selected || isNew) return;
+    if (!window.confirm(`Delete category "${selected.name}"? This cannot be undone.`)) return;
+    setSaveError(null); setIsSaving(true);
+    try {
+      await deletePrediction(selected.id);
+      onPredictionsChange(predictions.filter((p) => p.id !== selected.id));
+      closeForm();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Delete failed');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const showForm = isNew || selected !== null;
   const sorted = [...predictions].sort((a, b) => a.order - b.order);
 
@@ -191,6 +231,15 @@ const PredictionsPanel: React.FC<{ predictions: PredictionCategory[]; onPredicti
             <h2 className="font-display font-bold text-lg text-ink mb-5">{isNew ? 'New category' : `Edit: ${selected?.name}`}</h2>
             {saveError && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2 mb-4">{saveError}</p>}
             <PredictionForm initial={isNew ? null : selected} onSave={handleSave} onCancel={closeForm} isSaving={isSaving} />
+            {!isNew && selected && (
+              <button
+                onClick={handleDelete}
+                disabled={isSaving}
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" /> Delete category
+              </button>
+            )}
           </div>
         ) : (
           <div className="hidden lg:flex items-center justify-center h-48 border border-dashed border-warm-border rounded-xl">

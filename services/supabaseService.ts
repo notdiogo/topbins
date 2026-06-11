@@ -142,16 +142,28 @@ export async function updateBet(id: string, fields: Partial<Bet>): Promise<void>
   if (error) throw new Error(error.message);
 }
 
+// Short unique id for client-created rows (the bets table has no id default).
+const genId = (prefix: string) =>
+  `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
 export async function createBet(bet: Omit<Bet, 'id'>): Promise<Bet> {
   const client = supabaseAdmin ?? supabase;
   if (!client) throw new Error('Supabase not configured');
+  const row = { id: genId('bet'), ...betToRow(bet) };
   const { data, error } = await client
     .from('bets')
-    .insert(betToRow(bet))
+    .insert(row)
     .select()
     .single();
   if (error || !data) throw new Error(error?.message ?? 'Failed to create bet');
   return rowToBet(data as Record<string, unknown>);
+}
+
+export async function deleteBet(id: string): Promise<void> {
+  const client = supabaseAdmin ?? supabase;
+  if (!client) throw new Error('Supabase not configured');
+  const { error } = await client.from('bets').delete().eq('id', id);
+  if (error) throw new Error(error.message);
 }
 
 // ── predictions ───────────────────────────────────────────────
@@ -206,13 +218,21 @@ export async function updatePrediction(id: string, fields: Partial<PredictionCat
 export async function createPrediction(p: Omit<PredictionCategory, 'id'>): Promise<PredictionCategory> {
   const client = supabaseAdmin ?? supabase;
   if (!client) throw new Error('Supabase not configured');
+  const row = { id: genId('pred'), ...predictionToRow(p) };
   const { data, error } = await client
     .from('prediction_categories')
-    .insert(predictionToRow(p))
+    .insert(row)
     .select()
     .single();
   if (error || !data) throw new Error(error?.message ?? 'Failed to create prediction');
   return rowToPrediction(data as Record<string, unknown>);
+}
+
+export async function deletePrediction(id: string): Promise<void> {
+  const client = supabaseAdmin ?? supabase;
+  if (!client) throw new Error('Supabase not configured');
+  const { error } = await client.from('prediction_categories').delete().eq('id', id);
+  if (error) throw new Error(error.message);
 }
 
 // ── world cup brackets ────────────────────────────────────────

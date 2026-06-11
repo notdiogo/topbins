@@ -7,11 +7,16 @@
 -- Stores bet definitions and live metrics (updated daily by
 -- the Python scraper via the service-role key).
 create table if not exists public.bets (
-  id              text primary key,
+  id              text primary key default gen_random_uuid()::text,
   slug            text unique not null,
   title           text not null,
   league          text not null,
   season          text not null,
+  -- Grouping: club season vs international tournament
+  group_kind      text not null default 'CLUB_SEASON'
+                    check (group_kind in ('CLUB_SEASON', 'INTERNATIONAL_TOURNAMENT')),
+  group_name      text not null default '',
+  group_slug      text not null default '',
   type            text not null
                     check (type in ('PLAYER_VS_PLAYER', 'PLAYER_THRESHOLD', 'TEAM_VS_TEAM')),
   criteria        text not null,
@@ -19,6 +24,12 @@ create table if not exists public.bets (
   prize           text not null,
   status          text not null default 'ACTIVE'
                     check (status in ('ACTIVE', 'PENDING', 'SETTLED', 'VOID')),
+  -- Recorded outcome (set when SETTLED/VOID)
+  result          text check (result is null or result in ('SIDE_A', 'SIDE_B', 'PUSH', 'VOID')),
+  winners         jsonb not null default '[]',
+  placed_at       timestamptz,
+  stake           numeric,
+  payout          numeric,
   hero_image      text not null,
   use_custom_hero boolean not null default false,
   -- Nested arrays stored as JSON (rarely change shape)
@@ -28,6 +39,7 @@ create table if not exists public.bets (
   metrics         jsonb,
   updated_at      timestamptz not null default now()
 );
+create index if not exists bets_group_slug_idx on public.bets (group_slug);
 
 -- Auto-refresh updated_at on any row change
 create or replace function public.set_updated_at()
