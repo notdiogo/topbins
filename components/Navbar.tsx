@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Home } from 'lucide-react';
 
 interface NavbarProps {
   lastUpdated: string;
-  overHero?: boolean;
 }
 
 const SEASONS = [
@@ -12,8 +11,7 @@ const SEASONS = [
   { slug: 'epl-26-27', label: 'Season 26/27' },
 ];
 
-export const Navbar: React.FC<NavbarProps> = ({ lastUpdated, overHero = false }) => {
-  const [seasonsOpen, setSeasonsOpen] = useState(false);
+export const Navbar: React.FC<NavbarProps> = ({ lastUpdated }) => {
   const isHome = useLocation().pathname === '/';
 
   const link = (active: boolean) =>
