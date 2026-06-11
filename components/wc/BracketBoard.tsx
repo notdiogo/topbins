@@ -15,7 +15,8 @@ interface Props {
 }
 
 export const BracketBoard: React.FC<Props> = ({ entries, actual, teams }) => {
-  const people = entries.map((e) => e.participant);
+  const peopleOrder = ['Diogo', 'Mitch', 'Shiv'];
+  const people = entries.map((e) => e.participant).sort((a, b) => peopleOrder.indexOf(a) - peopleOrder.indexOf(b));
   const [person, setPerson] = useState(people[0] ?? 'Diogo');
   const [stage, setStage] = useState<'group' | 'knockout'>('group');
 
