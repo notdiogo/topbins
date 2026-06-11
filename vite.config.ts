@@ -7,7 +7,9 @@ export default defineConfig(({ mode }) => {
     return {
       server: {
         port: 3000,
-        host: 'localhost',
+        // Bind all interfaces (IPv4 + IPv6); 'localhost' alone bound only [::1],
+        // so http://127.0.0.1 / localhost refused connections in the browser.
+        host: true,
       },
       plugins: [react()],
       build: {

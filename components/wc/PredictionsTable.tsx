@@ -62,11 +62,11 @@ export const PredictionsTable: React.FC<{ predictions: PredictionCategory[] }> =
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-warm-border bg-stone">
+    <div className="overflow-hidden rounded-3xl bg-stone shadow-xl shadow-ink/5 ring-1 ring-warm-border/40">
       {/* Desktop / tablet table */}
       <table className="hidden w-full border-collapse sm:table">
         <thead>
-          <tr className="border-b border-warm-border bg-beige/60">
+          <tr className="bg-beige/70">
             <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted">Category</th>
             {PEOPLE.map((p) => (
               <th key={p.name} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide" style={{ color: personColor(p.varName) }}>
@@ -77,17 +77,17 @@ export const PredictionsTable: React.FC<{ predictions: PredictionCategory[] }> =
         </thead>
         <tbody>
           {cats.map((cat) => (
-            <tr key={cat.id} className="border-b border-warm-border/70 last:border-0">
+            <tr key={cat.id} className="border-b border-warm-border/40 transition-colors last:border-0 hover:bg-beige/40">
               <td className="px-5 py-3 align-middle"><CategoryLabel cat={cat} /></td>
               {PEOPLE.map((p) => (
                 <td key={p.name} className="px-5 py-3 align-middle"><Pick cat={cat} name={p.name} /></td>
               ))}
             </tr>
           ))}
-          <tr className="bg-beige/60">
-            <td className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted">Points</td>
+          <tr className="bg-beige/70">
+            <td className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-muted">Points</td>
             {PEOPLE.map((p) => (
-              <td key={p.name} className="px-5 py-3 font-mono text-lg font-bold tabular-nums" style={{ color: personColor(p.varName) }}>
+              <td key={p.name} className="px-5 py-4 font-mono text-2xl font-black tabular-nums" style={{ color: personColor(p.varName) }}>
                 {points[p.name] ?? 0}
               </td>
             ))}

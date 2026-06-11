@@ -29,6 +29,7 @@ export default {
         // Summer highlights + categorical person colors.
         sun:       v('--sun'),
         coral:     v('--coral'),
+        magenta:   v('--magenta'),
         'p-diogo': v('--p-diogo'),
         'p-shiv':  v('--p-shiv'),
         'p-mitch': v('--p-mitch'),

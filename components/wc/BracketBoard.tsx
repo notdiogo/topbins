@@ -92,7 +92,7 @@ const GroupStage: React.FC<{
       const order = entry.groupOrders[grp] ?? [];
       const actualTop2 = new Set((actual.groupOrders[grp] ?? []).slice(0, 2));
       return (
-        <div key={grp} className="rounded-2xl border border-warm-border bg-stone p-4">
+        <div key={grp} className="rounded-2xl bg-stone p-4 shadow-lg shadow-ink/5 ring-1 ring-warm-border/40">
           <div className="mb-3 flex items-center gap-2">
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-forest-light font-display text-sm font-bold text-forest">{grp}</span>
             <span className="text-xs font-semibold uppercase tracking-wide text-muted">Group {grp}</span>
@@ -216,7 +216,7 @@ const Knockout: React.FC<{
                     <div
                       key={m.id}
                       style={{ position: 'absolute', top, left: 4, right: 4, height: cardH }}
-                      className="rounded-lg border border-warm-border bg-stone p-1.5"
+                      className="rounded-lg bg-stone p-1.5 shadow-sm ring-1 ring-warm-border/40"
                     >
                       <Row id={aId} src={m.a} />
                       <div className="my-0.5 border-t border-warm-border/60" />

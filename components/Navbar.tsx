@@ -11,10 +11,10 @@ export const Navbar: React.FC = () => {
   const isHome = useLocation().pathname === '/';
 
   const link = (active: boolean) =>
-    `text-sm font-medium ${active ? 'text-ink' : 'text-muted hover:text-ink'}`;
+    `text-sm font-bold ${active ? 'text-forest' : 'text-muted hover:text-ink'}`;
 
   return (
-    <header className="bg-parchment/85 backdrop-blur-md border-b border-warm-border">
+    <header className="bg-parchment/80 backdrop-blur-md ring-1 ring-warm-border/40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-start">
         <nav className="flex items-center gap-4 sm:gap-6">
           {!isHome && (
@@ -24,7 +24,7 @@ export const Navbar: React.FC = () => {
           )}
           <div className="relative group py-2">
             <button
-              className={`flex items-center gap-1 text-sm font-medium text-muted group-hover:text-ink`}
+              className={`flex items-center gap-1 text-sm font-bold text-muted group-hover:text-ink`}
             >
               Seasons <ChevronDown className="w-3.5 h-3.5" />
             </button>

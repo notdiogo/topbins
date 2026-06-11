@@ -59,7 +59,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group bg-stone border border-warm-border rounded-xl shadow-sm hover:shadow-md hover:border-forest/40 cursor-pointer overflow-hidden"
+      className="group bg-stone ring-1 ring-warm-border/40 rounded-2xl shadow-md shadow-ink/5 hover:shadow-xl hover:shadow-forest/10 hover:ring-forest/30 transition-shadow cursor-pointer overflow-hidden"
     >
       <div className="flex flex-col sm:flex-row">
         <div className="flex-1 p-5 md:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6">
@@ -86,7 +86,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-xs text-muted bg-beige border border-warm-border px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-xs font-bold uppercase tracking-wide text-forest bg-forest-light px-2.5 py-0.5 rounded-full">
                     {bet.league}
                   </span>
                 </div>
@@ -111,7 +111,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                       <span>{metrics.label}</span>
                       <span className="font-tabular font-semibold text-ink">{valueA} / {target}</span>
                     </div>
-                    <div className="h-2.5 w-full bg-beige rounded-full overflow-hidden border border-warm-border">
+                    <div className="h-2.5 w-full bg-beige rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${isWinningA ? 'bg-forest' : 'bg-muted'}`}
                         style={{ width: `${getBarWidth(valueA, 0)}%` }}
@@ -124,7 +124,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                     {/* Player A */}
                     <div className="flex items-center gap-2.5">
                       <span className="text-xs text-muted w-20 truncate shrink-0">{formatCountryWithEmoji(entityA?.name.split(' ').pop())}</span>
-                      <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden border border-warm-border">
+                      <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${isWinningA ? 'bg-forest' : 'bg-muted/40'}`}
                           style={{ width: `${getBarWidth(valueA, valueB)}%` }}
@@ -138,7 +138,7 @@ export const BetListRow: React.FC<BetListRowProps> = ({ bet, onClick }) => {
                     {entityB && (
                       <div className="flex items-center gap-2.5">
                         <span className="text-xs text-muted w-20 truncate shrink-0">{formatCountryWithEmoji(entityB?.name.split(' ').pop())}</span>
-                        <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden border border-warm-border">
+                        <div className="flex-1 h-2.5 bg-beige rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${isWinningB ? 'bg-forest' : 'bg-muted/40'}`}
                             style={{ width: `${getBarWidth(valueB, valueA)}%` }}
