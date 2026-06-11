@@ -13,6 +13,18 @@ export enum SectionId {
 export type BetStatus = 'ACTIVE' | 'PENDING' | 'SETTLED' | 'VOID';
 export type Side = 'A' | 'B' | 'NONE';
 
+// How a bet is grouped for navigation: a club season or an international tournament.
+export type GroupKind = 'CLUB_SEASON' | 'INTERNATIONAL_TOURNAMENT';
+export interface BetGroup {
+  kind: GroupKind;
+  name: string; // e.g. "EPL 25/26", "World Cup 2026"
+  slug: string; // e.g. "epl-25-26"
+}
+
+// The recorded outcome of a settled bet. `winners` (participant names) is the
+// authoritative tally; `result` carries the side semantics.
+export type BetResult = 'SIDE_A' | 'SIDE_B' | 'PUSH' | 'VOID';
+
 export interface Participant {
   name: string;
   side: Side;
@@ -31,6 +43,7 @@ export interface Bet {
   title: string;
   league: string;
   season: string;
+  group: BetGroup;
   type: 'PLAYER_VS_PLAYER' | 'PLAYER_THRESHOLD' | 'TEAM_VS_TEAM';
   
   // The Rules
@@ -43,6 +56,12 @@ export interface Bet {
   entities: BetEntity[];
   
   status: BetStatus;
+  // Settlement / outcome (set when status is SETTLED or VOID)
+  result?: BetResult;
+  winners?: string[]; // participant names credited with the win (authoritative for stats)
+  placedAt?: string;  // ISO date the bet was placed (sorting, streaks)
+  stake?: number;     // groundwork for profit/ROI
+  payout?: number;
   heroImage: string; // This is now the BACKGROUND texture
   useCustomHero?: boolean; // Flag to override default split-player view
   

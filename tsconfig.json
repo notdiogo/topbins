@@ -23,5 +23,6 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "dist", "vite.config.ts", "prisma"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -12,7 +12,9 @@
       "Bash(git init *)",
       "Bash(git remote *)",
       "Bash(git fetch *)",
-      "Bash(git reset *)"
+      "Bash(git reset *)",
+      "Bash(git push *)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

@@ -36,6 +36,9 @@ const PLAYER_IMGS = {
   CUNHA: "/Cunha-avatar.png",
 };
 
+// Every existing bet belongs to the wrapped-up 25/26 Premier League season.
+const EPL_25_26: Bet['group'] = { kind: 'CLUB_SEASON', name: 'EPL 25/26', slug: 'epl-25-26' };
+
 export const MOCK_BETS: Bet[] = [
   {
     id: 'bet_01',
@@ -43,6 +46,7 @@ export const MOCK_BETS: Bet[] = [
     title: 'Odegaard vs Bruno',
     league: 'EPL',
     season: '2025-2026',
+    group: EPL_25_26,
     type: 'PLAYER_VS_PLAYER',
     criteria: "Straight comparison of total assists in the Premier League.",
     voidConditions: "Bet void if one player accumulates 2 months more injury time than the other.",
@@ -70,6 +74,7 @@ export const MOCK_BETS: Bet[] = [
     title: 'Zirkzee vs Madueke',
     league: 'EPL + FA CUP + CARABAO',
     season: '2025-2026',
+    group: EPL_25_26,
     type: 'PLAYER_VS_PLAYER',
     criteria: "Most combined Goals + Assists (G/A) across EPL, Carabao Cup, and FA Cup. Minutes played are ignored.",
     voidConditions: "Bet void if one player accumulates 2 months more injury time than the other.",
@@ -97,6 +102,7 @@ export const MOCK_BETS: Bet[] = [
     title: 'Zirkzee vs Cherki',
     league: 'EPL + FA CUP + CARABAO',
     season: '2025-2026',
+    group: EPL_25_26,
     type: 'PLAYER_VS_PLAYER',
     criteria: "Most combined Goals + Assists (G/A) across EPL, Carabao Cup, and FA Cup. Minutes played are ignored.",
     voidConditions: "Bet void if one player suffers two months more injury than the other.",
@@ -124,6 +130,7 @@ export const MOCK_BETS: Bet[] = [
     title: 'Frimpong vs Nunes',
     league: 'EPL',
     season: '2025-2026',
+    group: EPL_25_26,
     type: 'PLAYER_VS_PLAYER',
     criteria: "Highest average FotMob rating across the season. Minimum 25 matches played required.",
     voidConditions: "If either player finishes the season with fewer than 25 matches played.",
@@ -151,6 +158,7 @@ export const MOCK_BETS: Bet[] = [
     title: 'Matheus Cunha Target',
     league: 'EPL',
     season: '2025-2026',
+    group: EPL_25_26,
     type: 'PLAYER_THRESHOLD',
     criteria: "Reach 20 Non-Penalty Goals + Assists (G/A) in the Premier League.",
     voidConditions: "Void if Cunha suffers two injuries totaling 12+ weeks.",
@@ -177,11 +185,15 @@ export const MOCK_BETS: Bet[] = [
     title: 'Liverpool vs Man Utd',
     league: 'EPL',
     season: '2025-2026',
+    group: EPL_25_26,
     type: 'TEAM_VS_TEAM',
     criteria: "Who finishes higher in EPL standings.",
     voidConditions: "Standard rules apply.",
     prize: "Mitch owes Shiv a shoe bag. Shiv does a 90s cold plunge (full body immersion).",
-    status: 'ACTIVE',
+    status: 'SETTLED',
+    result: 'SIDE_B',
+    winners: ['Shiv'],
+    placedAt: '2025-08-15',
     heroImage: "/liverpoolvsunited.png",
     useCustomHero: true,
     participants: [

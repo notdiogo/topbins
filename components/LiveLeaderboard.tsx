@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Bet, MonthlyStanding } from '../types';
+import { resolveWinners } from '../lib/betOutcome';
 import { TrendingUp } from 'lucide-react';
 
 const PARTICIPANTS = [
@@ -12,22 +13,10 @@ export const LiveLeaderboard: React.FC<{ bets: Bet[]; leagueHistory: MonthlyStan
   const currentWins = useMemo(() => {
     const wins: Record<string, number> = { Diogo: 0, Shiv: 0, Mitch: 0 };
     bets.forEach(bet => {
-      if (bet.status !== 'ACTIVE') return;
-      const { metrics } = bet;
-      if (!metrics) return;
-      const { valueA, valueB = 0, target, isInverse } = metrics;
-      let side: 'A' | 'B' | null = null;
-      if (bet.type === 'PLAYER_THRESHOLD') {
-        if (target) side = valueA >= target ? 'A' : 'B';
-      } else {
-        if (valueA === valueB) return;
-        side = isInverse ? (valueA < valueB ? 'A' : 'B') : (valueA > valueB ? 'A' : 'B');
-      }
-      if (side) {
-        bet.participants.forEach(p => {
-          if (p.side === side && wins[p.name] !== undefined) wins[p.name]++;
-        });
-      }
+      // Counts won (settled, from the recorded winner) + winning (active, inferred).
+      resolveWinners(bet).forEach((name: string) => {
+        if (wins[name] !== undefined) wins[name]++;
+      });
     });
     return wins;
   }, [bets]);

@@ -7,40 +7,15 @@
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#F7F3EE" />
+    <meta name="theme-color" content="#F7FBFC" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="TopBins" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
     <style>
-      :root {
-        --parchment: #F7F3EE;
-        --forest:    #2A5A0E;
-        --ink:       #1C1916;
-      }
       *, *::before, *::after { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background-color: var(--parchment);
-        color: var(--ink);
-        overflow-x: hidden;
-        -webkit-font-smoothing: antialiased;
-      }
-      ::selection {
-        background-color: var(--forest);
-        color: #fff;
-      }
-      ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: #EDE8DE; }
-      ::-webkit-scrollbar-thumb { background: #DDD8D0; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: var(--forest); }
+      /* Fonts, tokens and base styles live in index.css (self-hosted @fontsource). */
     </style>
   </head>
   <body>

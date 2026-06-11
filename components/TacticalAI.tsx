@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from './Button';
 import { generateTacticalBrief } from '../services/geminiService';
 import { GenerationResult } from '../types';
-import { Terminal, Loader2, Cpu, Play, Database } from 'lucide-react';
+import { Loader2, Cpu, Play, Database } from 'lucide-react';
 
 export const TacticalAI: React.FC = () => {
   const [opponent, setOpponent] = useState('');

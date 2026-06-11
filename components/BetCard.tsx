@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Bet } from '../types';
-import { CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 interface BetCardProps {
   bet: Bet;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bet, BetEntity, Participant, Side } from '../../types';
+import { Bet, BetEntity, BetResult, GroupKind, Participant, Side } from '../../types';
 
 interface BetFormProps {
   initial: Bet | null; // null = creating a new bet
@@ -11,6 +11,19 @@ interface BetFormProps {
 const SIDES: Side[] = ['A', 'B', 'NONE'];
 const STATUS_OPTIONS = ['ACTIVE', 'PENDING', 'SETTLED', 'VOID'] as const;
 const TYPE_OPTIONS = ['PLAYER_VS_PLAYER', 'PLAYER_THRESHOLD', 'TEAM_VS_TEAM'] as const;
+const GROUP_KIND_OPTIONS: { value: GroupKind; label: string }[] = [
+  { value: 'CLUB_SEASON', label: 'Club Season' },
+  { value: 'INTERNATIONAL_TOURNAMENT', label: 'International Tournament' },
+];
+const RESULT_OPTIONS: { value: BetResult; label: string }[] = [
+  { value: 'SIDE_A', label: 'Side A won' },
+  { value: 'SIDE_B', label: 'Side B won' },
+  { value: 'PUSH', label: 'Push (tie)' },
+  { value: 'VOID', label: 'Void' },
+];
+
+const slugify = (s: string) =>
+  s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 function emptyBet(): Bet {
   return {
@@ -19,6 +32,7 @@ function emptyBet(): Bet {
     title: '',
     league: 'EPL',
     season: '2025-2026',
+    group: { kind: 'CLUB_SEASON', name: '', slug: '' },
     type: 'PLAYER_VS_PLAYER',
     criteria: '',
     voidConditions: '',
@@ -56,6 +70,31 @@ export const BetForm: React.FC<BetFormProps> = ({ initial, onSave, onCancel, isS
   const setMetric = (key: string, value: unknown) =>
     setForm((f) => ({ ...f, metrics: { ...(f.metrics ?? { label: '', valueA: 0 }), [key]: value } }));
 
+  // Group: editing the name auto-fills the slug (until the slug is hand-edited).
+  const setGroup = (field: keyof Bet['group'], value: string) =>
+    setForm((f) => {
+      const group = { ...f.group, [field]: value };
+      if (field === 'name') group.slug = slugify(value);
+      return { ...f, group };
+    });
+
+  // Settlement: toggle a participant in/out of the recorded winners list.
+  const toggleWinner = (name: string) =>
+    setForm((f) => {
+      const current = f.winners ?? [];
+      const winners = current.includes(name) ? current.filter((n) => n !== name) : [...current, name];
+      return { ...f, winners };
+    });
+
+  // Derive winners from the chosen result side (overwrites manual selections).
+  const deriveWinnersFromResult = () =>
+    setForm((f) => {
+      let winners: string[] = [];
+      if (f.result === 'SIDE_A') winners = f.participants.filter((p) => p.side === 'A').map((p) => p.name);
+      else if (f.result === 'SIDE_B') winners = f.participants.filter((p) => p.side === 'B').map((p) => p.name);
+      return { ...f, winners };
+    });
+
   // Participants
   const setParticipant = (i: number, field: keyof Participant, value: string) =>
     setForm((f) => {
@@ -90,6 +129,7 @@ export const BetForm: React.FC<BetFormProps> = ({ initial, onSave, onCancel, isS
   };
 
   const isThreshold = form.type === 'PLAYER_THRESHOLD';
+  const isSettled = form.status === 'SETTLED' || form.status === 'VOID';
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -121,6 +161,75 @@ export const BetForm: React.FC<BetFormProps> = ({ initial, onSave, onCancel, isS
           </Field>
         </div>
       </section>
+
+      {/* Group */}
+      <section>
+        <h3 className="text-xs font-semibold text-muted uppercase tracking-widest mb-3 border-b border-warm-border pb-1">Group</h3>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Kind" className="col-span-2">
+            <select className={inputCls} value={form.group.kind} onChange={(e) => setGroup('kind', e.target.value)}>
+              {GROUP_KIND_OPTIONS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Name (e.g. World Cup 2026)">
+            <input className={inputCls} value={form.group.name} onChange={(e) => setGroup('name', e.target.value)} placeholder="EPL 25/26" />
+          </Field>
+          <Field label="Slug (auto)">
+            <input className={inputCls} value={form.group.slug} onChange={(e) => setGroup('slug', e.target.value)} placeholder="epl-25-26" />
+          </Field>
+        </div>
+      </section>
+
+      {/* Settlement — only relevant once a bet is SETTLED or VOID */}
+      {isSettled && (
+        <section>
+          <h3 className="text-xs font-semibold text-muted uppercase tracking-widest mb-3 border-b border-warm-border pb-1">Settlement</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Result">
+              <select
+                className={inputCls}
+                value={form.result ?? ''}
+                onChange={(e) => set('result', (e.target.value || undefined) as Bet['result'])}
+              >
+                <option value="">— pick —</option>
+                {RESULT_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Placed date">
+              <input type="date" className={inputCls} value={form.placedAt?.slice(0, 10) ?? ''} onChange={(e) => set('placedAt', e.target.value || undefined)} />
+            </Field>
+            <Field label="Stake (optional)">
+              <input type="number" step="any" className={inputCls} value={form.stake ?? ''} onChange={(e) => set('stake', e.target.value ? parseFloat(e.target.value) : undefined)} />
+            </Field>
+            <Field label="Payout (optional)">
+              <input type="number" step="any" className={inputCls} value={form.payout ?? ''} onChange={(e) => set('payout', e.target.value ? parseFloat(e.target.value) : undefined)} />
+            </Field>
+            <div className="col-span-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-muted">Winners</label>
+                <button type="button" onClick={deriveWinnersFromResult} className="text-xs text-forest hover:underline">Derive from result</button>
+              </div>
+              <div className="flex flex-wrap gap-3 p-3 bg-parchment rounded border border-warm-border">
+                {form.participants.filter((p) => p.name).length === 0 && (
+                  <span className="text-xs text-muted">Add participants first.</span>
+                )}
+                {form.participants.filter((p) => p.name).map((p) => (
+                  <label key={p.name} className="flex items-center gap-1.5 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 accent-forest"
+                      checked={(form.winners ?? []).includes(p.name)}
+                      onChange={() => toggleWinner(p.name)}
+                    />
+                    {p.name}
+                  </label>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted mt-1">PUSH / VOID = no winners. Winners are authoritative for stats.</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Rules */}
       <section>

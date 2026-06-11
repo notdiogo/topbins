@@ -22,11 +22,21 @@ function rowToBet(row: Record<string, unknown>): Bet {
     title:           row.title as string,
     league:          row.league as string,
     season:          row.season as string,
+    group: {
+      kind: (row.group_kind as Bet['group']['kind']) ?? 'CLUB_SEASON',
+      name: (row.group_name as string) ?? '',
+      slug: (row.group_slug as string) ?? '',
+    },
     type:            row.type as Bet['type'],
     criteria:        row.criteria as string,
     voidConditions:  row.void_conditions as string,
     prize:           row.prize as string,
     status:          row.status as Bet['status'],
+    result:          (row.result as Bet['result']) ?? undefined,
+    winners:         (row.winners as string[] | null) ?? [],
+    placedAt:        (row.placed_at as string | null) ?? undefined,
+    stake:           (row.stake as number | null) ?? undefined,
+    payout:          (row.payout as number | null) ?? undefined,
     heroImage:       row.hero_image as string,
     useCustomHero:   row.use_custom_hero as boolean | undefined,
     participants:    row.participants as Bet['participants'],
@@ -43,6 +53,7 @@ export async function fetchBets(): Promise<Bet[]> {
   const { data, error } = await supabase
     .from('bets')
     .select('*')
+    .order('placed_at', { ascending: false, nullsFirst: false })
     .order('id');
 
   if (error || !data?.length) {
@@ -98,11 +109,21 @@ function betToRow(bet: Partial<Bet>): Record<string, unknown> {
   if (bet.title           !== undefined) row.title           = bet.title;
   if (bet.league          !== undefined) row.league          = bet.league;
   if (bet.season          !== undefined) row.season          = bet.season;
+  if (bet.group           !== undefined) {
+    row.group_kind = bet.group.kind;
+    row.group_name = bet.group.name;
+    row.group_slug = bet.group.slug;
+  }
   if (bet.type            !== undefined) row.type            = bet.type;
   if (bet.criteria        !== undefined) row.criteria        = bet.criteria;
   if (bet.voidConditions  !== undefined) row.void_conditions = bet.voidConditions;
   if (bet.prize           !== undefined) row.prize           = bet.prize;
   if (bet.status          !== undefined) row.status          = bet.status;
+  if (bet.result          !== undefined) row.result          = bet.result ?? null;
+  if (bet.winners         !== undefined) row.winners         = bet.winners;
+  if (bet.placedAt        !== undefined) row.placed_at       = bet.placedAt;
+  if (bet.stake           !== undefined) row.stake           = bet.stake;
+  if (bet.payout          !== undefined) row.payout          = bet.payout;
   if (bet.heroImage       !== undefined) row.hero_image      = bet.heroImage;
   if (bet.useCustomHero   !== undefined) row.use_custom_hero = bet.useCustomHero;
   if (bet.participants    !== undefined) row.participants    = bet.participants;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TECH_SPECS } from '../constants';
-import { Target, Zap, Activity, Crosshair, Smartphone, Layers } from 'lucide-react';
+import { Target, Zap, Activity, Smartphone, Layers } from 'lucide-react';
 
 const iconMap: Record<string, React.ReactNode> = {
   target: <Target className="w-6 h-6" />,

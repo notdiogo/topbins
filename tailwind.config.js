@@ -1,4 +1,11 @@
 /** @type {import('tailwindcss').Config} */
+
+// Colors are CSS-variable RGB triplets (defined in index.css :root) so the whole
+// palette can be retuned in one place and components can also read raw vars
+// (e.g. rgb(var(--p-diogo))). Alpha utilities (bg-forest/20) keep working via
+// the <alpha-value> placeholder.
+const v = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: [
     "./index.html",
@@ -7,21 +14,30 @@ export default {
   theme: {
     extend: {
       colors: {
-        parchment: '#F7F3EE',
-        stone:     '#FDFBF8',
-        beige:     '#EDE8DE',
-        'warm-border': '#DDD8D0',
-        ink:       '#1C1916',
-        muted:     '#7A746C',
-        forest:    '#2A5A0E',
-        'forest-mid': '#3A7A1A',
-        'forest-light': '#EAF2E3',
-        danger:    '#9B3B3B',
-        'danger-light': '#F9EEEE',
+        // Existing utility names, remapped onto the fresh summer tokens.
+        parchment: v('--bg'),
+        stone:     v('--surface'),
+        beige:     v('--surface-2'),
+        'warm-border': v('--border'),
+        ink:       v('--text'),
+        muted:     v('--muted'),
+        forest:    v('--accent'),
+        'forest-mid': v('--accent-bright'),
+        'forest-light': v('--accent-soft'),
+        danger:    v('--danger'),
+        'danger-light': v('--danger-soft'),
+        // Summer highlights + categorical person colors.
+        sun:       v('--sun'),
+        coral:     v('--coral'),
+        'p-diogo': v('--p-diogo'),
+        'p-shiv':  v('--p-shiv'),
+        'p-mitch': v('--p-mitch'),
       },
       fontFamily: {
-        serif: ['"Playfair Display"', 'Georgia', 'serif'],
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        display: ['"Outfit Variable"', 'system-ui', 'sans-serif'],
+        serif:   ['"Outfit Variable"', 'system-ui', 'sans-serif'], // legacy font-serif usage adopts the display face
+        sans:    ['"Geist Variable"', 'system-ui', 'sans-serif'],
+        mono:    ['"Geist Mono Variable"', 'ui-monospace', 'monospace'],
       },
     },
   },
