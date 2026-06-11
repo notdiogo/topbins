@@ -4,7 +4,27 @@ import { BetList } from '../components/BetList';
 import { Reveal } from '../components/Reveal';
 import { PredictionsTable } from '../components/wc/PredictionsTable';
 import { BracketBoard } from '../components/wc/BracketBoard';
+import { Insights, Insight } from '../components/wc/Insights';
 import { WORLD_CUP_2026 } from '../constants';
+import { Handshake, Flame, Crown, Glasses, Goal, ShieldHalf, Equal, Trophy, Sparkles, Plane } from 'lucide-react';
+
+const PREDICTION_INSIGHTS: Insight[] = [
+  { icon: Handshake, text: <>Across 30 categories the trio agrees unanimously on exactly <strong>one</strong> thing: Argentina take the most cards.</> },
+  { icon: Flame, text: <>Mbappé is the awards magnet — picked on 5 of 6 Golden Ball &amp; Golden Boot ballots.</> },
+  { icon: Plane, text: <>Nobody trusts England: each card has them as the bottler, the flop, or the penalty heartbreak.</> },
+  { icon: Crown, text: <>It's France vs. Portugal for the crown — Diogo and Mitch back France, Shiv stands alone on Portugal.</> },
+  { icon: Glasses, text: <>Maignan is the consensus Golden Glove and Romero the favourite for the first red card.</> },
+  { icon: Goal, text: <>Brazil v Haiti is the popular shout for the highest-scoring match of the tournament.</> },
+];
+
+const BRACKET_INSIGHTS: Insight[] = [
+  { icon: Equal, text: <>Groups C, F and I are filled identically by all three — total agreement on 12 teams.</> },
+  { icon: Trophy, text: <>Two Portugals to one France: Shiv and Diogo crown Portugal, only Mitch keeps France.</> },
+  { icon: ShieldHalf, text: <>Spain reach the semi-finals on every single bracket — the most trusted deep run.</> },
+  { icon: Sparkles, text: <>Diogo is the lone Morocco believer, sending them to the QF while the others exit in R32.</> },
+  { icon: Goal, text: <>All three pick France to knock Sweden out instantly in the Round of 32.</> },
+  { icon: Flame, text: <>Brazil splits the room: a semi-final for Shiv, an early R16 exit to Norway for the others.</> },
+];
 
 const Section: React.FC<{
   id: string;
@@ -53,6 +73,7 @@ export const HomePage: React.FC = () => {
         tinted
       >
         <PredictionsTable predictions={wcPredictions} />
+        <Insights items={PREDICTION_INSIGHTS} />
       </Section>
 
       <Section
@@ -61,6 +82,7 @@ export const HomePage: React.FC = () => {
         subtitle="Each of us fills a full bracket: group stages and the knockout run to the final."
       >
         <BracketBoard entries={bracketEntries} actual={bracketActual} teams={teams} />
+        <Insights items={BRACKET_INSIGHTS} />
       </Section>
     </>
   );
