@@ -38,16 +38,15 @@ const Pick: React.FC<{ cat: PredictionCategory; name: string }> = ({ cat, name }
   const pick = cat.picks[name];
   const correct = isCorrect(cat, name);
   if (!pick) return <span className="text-muted">·</span>;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm ${
-        correct ? 'bg-forest-light font-semibold text-forest' : 'text-ink'
-      }`}
-    >
-      {correct && <Check className="h-3.5 w-3.5" />}
-      {formatCountryWithEmoji(pick)}
-    </span>
-  );
+  if (correct) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-lg bg-forest-light px-2 py-1 text-sm font-semibold text-forest">
+        <Check className="h-3.5 w-3.5" />
+        {formatCountryWithEmoji(pick)}
+      </span>
+    );
+  }
+  return <span className="text-sm text-ink">{formatCountryWithEmoji(pick)}</span>;
 };
 
 export const PredictionsTable: React.FC<{ predictions: PredictionCategory[] }> = ({ predictions }) => {

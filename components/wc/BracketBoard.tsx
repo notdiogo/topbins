@@ -121,6 +121,38 @@ const GroupStage: React.FC<{
   </div>
 );
 
+// ── Bracket connector SVG ─────────────────────────────────────────
+const FIRST_ROUND_MATCHES = 16; // R32
+const SLOT_H = 72;              // px per R32 slot; total body height = FIRST_ROUND_MATCHES * SLOT_H
+const BODY_H = FIRST_ROUND_MATCHES * SLOT_H;
+const COL_W = 160;
+const CONN_W = 24;
+
+const BracketConnector: React.FC<{ fromCount: number }> = ({ fromCount }) => {
+  const matchH = BODY_H / fromCount; // height each "from" match occupies
+  return (
+    <svg
+      width={CONN_W}
+      height={BODY_H}
+      className="shrink-0"
+      style={{ color: 'rgb(var(--border))' }}
+    >
+      {Array.from({ length: fromCount / 2 }).map((_, i) => {
+        const topY = i * 2 * matchH + matchH / 2;
+        const botY = (i * 2 + 1) * matchH + matchH / 2;
+        const midY = (topY + botY) / 2;
+        const mx = CONN_W / 2;
+        return (
+          <g key={i} stroke="currentColor" strokeWidth="1" fill="none" strokeLinecap="round">
+            <polyline points={`0,${topY} ${mx},${topY} ${mx},${botY} 0,${botY}`} />
+            <line x1={mx} y1={midY} x2={CONN_W} y2={midY} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
+
 // ── Knockout ──────────────────────────────────────────────────────
 const Knockout: React.FC<{
   entry: BracketEntry;
@@ -132,19 +164,36 @@ const Knockout: React.FC<{
 
   return (
     <div className="overflow-x-auto pb-2">
-      <div className="flex min-w-max gap-4">
-        {rounds.map((roundId) => {
-          const round = ROUNDS.find((r) => r.id === roundId)!;
+      {/* Round headers */}
+      <div className="mb-2 flex min-w-max">
+        {rounds.map((roundId, ri) => (
+          <React.Fragment key={roundId}>
+            {ri > 0 && <div style={{ width: CONN_W }} />}
+            <div style={{ width: COL_W }} className="text-center text-xs font-semibold uppercase tracking-wide text-muted">
+              {ROUNDS.find((r) => r.id === roundId)!.short}
+            </div>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Bracket body */}
+      <div className="flex min-w-max" style={{ height: BODY_H }}>
+        {rounds.map((roundId, ri) => {
           const matches = MATCHES_BY_ROUND[roundId];
+          const matchH = BODY_H / matches.length;
+
           return (
-            <div key={roundId} className="flex w-44 shrink-0 flex-col gap-3">
-              <div className="text-center text-xs font-semibold uppercase tracking-wide text-muted">{round.short}</div>
-              <div className="flex flex-1 flex-col justify-around gap-3">
-                {matches.map((m) => {
+            <React.Fragment key={roundId}>
+              {ri > 0 && <BracketConnector fromCount={MATCHES_BY_ROUND[rounds[ri - 1]].length} />}
+              <div style={{ width: COL_W, height: BODY_H }} className="relative shrink-0">
+                {matches.map((m, mi) => {
                   const aId = resolveTeam(m.a, entry.groupOrders, entry.knockout);
                   const bId = resolveTeam(m.b, entry.groupOrders, entry.knockout);
                   const picked = entry.knockout[m.id];
                   const actualWinner = actual.knockout[m.id];
+                  const cardH = 68;
+                  const top = mi * matchH + (matchH - cardH) / 2;
+
                   const Row: React.FC<{ id?: string; src: any }> = ({ id, src }) => {
                     const isPick = !!picked && id === picked;
                     const correct = isPick && !!actualWinner && actualWinner === picked;
@@ -162,8 +211,13 @@ const Knockout: React.FC<{
                       </div>
                     );
                   };
+
                   return (
-                    <div key={m.id} className="rounded-lg border border-warm-border bg-stone p-1.5">
+                    <div
+                      key={m.id}
+                      style={{ position: 'absolute', top, left: 4, right: 4, height: cardH }}
+                      className="rounded-lg border border-warm-border bg-stone p-1.5"
+                    >
                       <Row id={aId} src={m.a} />
                       <div className="my-0.5 border-t border-warm-border/60" />
                       <Row id={bId} src={m.b} />
@@ -171,7 +225,7 @@ const Knockout: React.FC<{
                   );
                 })}
               </div>
-            </div>
+            </React.Fragment>
           );
         })}
       </div>
