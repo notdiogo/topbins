@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ManagePage } from './manage/ManagePage';
-import { Bet } from '../types';
+import { Bet, PredictionCategory } from '../types';
 
 const ADMIN_PASSWORD = 'slbenfica';
 const SESSION_KEY = 'admin_auth';
@@ -8,9 +8,11 @@ const SESSION_KEY = 'admin_auth';
 interface AdminGateProps {
   bets: Bet[];
   onBetsChange: (bets: Bet[]) => void;
+  predictions: PredictionCategory[];
+  onPredictionsChange: (p: PredictionCategory[]) => void;
 }
 
-export const AdminGate: React.FC<AdminGateProps> = ({ bets, onBetsChange }) => {
+export const AdminGate: React.FC<AdminGateProps> = ({ bets, onBetsChange, predictions, onPredictionsChange }) => {
   const [authed, setAuthed] = useState(sessionStorage.getItem(SESSION_KEY) === '1');
   const [input, setInput] = useState('');
   const [error, setError] = useState(false);
@@ -27,7 +29,14 @@ export const AdminGate: React.FC<AdminGateProps> = ({ bets, onBetsChange }) => {
   };
 
   if (authed) {
-    return <ManagePage bets={bets} onBetsChange={onBetsChange} />;
+    return (
+      <ManagePage
+        bets={bets}
+        onBetsChange={onBetsChange}
+        predictions={predictions}
+        onPredictionsChange={onPredictionsChange}
+      />
+    );
   }
 
   return (

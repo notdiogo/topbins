@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { useData } from '../context/DataContext';
 import { computeRecords, computeTotals, winRate } from '../lib/stats';
+import { predictionPoints, bracketPoints, wcStandings } from '../lib/scoring';
 import { Reveal } from '../components/Reveal';
 import { CountUp } from '../components/CountUp';
-import { TrendingUp } from 'lucide-react';
+import { Trophy, TrendingUp } from 'lucide-react';
 
 const PERSON_VAR: Record<string, string> = {
   Diogo: 'var(--p-diogo)',
@@ -22,9 +23,13 @@ const StatTile: React.FC<{ label: string; value: number }> = ({ label, value }) 
 );
 
 export const StatsPage: React.FC = () => {
-  const { bets } = useData();
+  const { bets, predictions, bracketEntries, bracketActual } = useData();
   const totals = useMemo(() => computeTotals(bets), [bets]);
   const records = useMemo(() => computeRecords(bets), [bets]);
+  const wc = useMemo(
+    () => wcStandings(predictionPoints(predictions), bracketPoints(bracketEntries, bracketActual)),
+    [predictions, bracketEntries, bracketActual],
+  );
 
   const sorted = [...records].sort((a, b) => b.won - a.won || winRate(b) - winRate(a));
 
@@ -42,6 +47,31 @@ export const StatsPage: React.FC = () => {
         <StatTile label="Settled" value={totals.settled} />
         <StatTile label="Push" value={totals.push} />
         <StatTile label="Void" value={totals.void} />
+      </div>
+
+      {/* World Cup 2026 points */}
+      <div className="flex items-center gap-2 mb-5">
+        <Trophy className="w-4 h-4 text-forest" />
+        <h2 className="font-display text-2xl font-bold text-ink">World Cup 2026 points</h2>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+        {wc.map((s, rank) => {
+          const color = personColor(s.name);
+          return (
+            <Reveal key={s.name} delay={rank * 70}>
+              <div className="bg-stone rounded-2xl border border-warm-border p-6 h-full" style={{ borderTopColor: color, borderTopWidth: 4 }}>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-ink text-lg">{s.name}</span>
+                  <span className="font-mono text-3xl font-bold tabular-nums" style={{ color }}><CountUp value={s.total} /></span>
+                </div>
+                <div className="mt-3 flex gap-4 text-xs text-muted">
+                  <span><span className="font-mono font-semibold text-ink">{s.predictions}</span> predictions</span>
+                  <span><span className="font-mono font-semibold text-ink">{s.brackets}</span> brackets</span>
+                </div>
+              </div>
+            </Reveal>
+          );
+        })}
       </div>
 
       {/* Per-person records */}

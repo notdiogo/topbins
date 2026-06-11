@@ -1,5 +1,6 @@
 
-import { NavItem, SectionId, Bet, UserStats, MonthlyStanding } from './types';
+import { NavItem, SectionId, Bet, UserStats, MonthlyStanding, PredictionCategory, WCTeam, BracketEntry, BracketActual } from './types';
+import { GROUPS, MATCHES, R32, resolveTeam } from './lib/wcBracket';
 
 // Auto-updated by fetch_and_update.py
 export const LAST_UPDATED = 'Wed Jun 10, 7:07 PM EST';
@@ -37,7 +38,15 @@ const PLAYER_IMGS = {
 };
 
 // Every existing bet belongs to the wrapped-up 25/26 Premier League season.
-const EPL_25_26: Bet['group'] = { kind: 'CLUB_SEASON', name: 'EPL 25/26', slug: 'epl-25-26' };
+export const EPL_25_26: Bet['group'] = { kind: 'CLUB_SEASON', name: 'EPL 25/26', slug: 'epl-25-26' };
+
+// The headline competition for the relaunch.
+export const WORLD_CUP_2026: Bet['group'] = { kind: 'INTERNATIONAL_TOURNAMENT', name: 'World Cup 2026', slug: 'world-cup-2026' };
+export const EPL_26_27: Bet['group'] = { kind: 'CLUB_SEASON', name: 'EPL 26/27', slug: 'epl-26-27' };
+
+// All known groups, so pages can render a header + empty state even before any
+// bets exist (e.g. the upcoming 26/27 season).
+export const ALL_GROUPS: Bet['group'][] = [WORLD_CUP_2026, EPL_25_26, EPL_26_27];
 
 export const MOCK_BETS: Bet[] = [
   {
@@ -211,8 +220,190 @@ export const MOCK_BETS: Bet[] = [
       isInverse: true,
       maxValue: 20
     }
+  },
+  {
+    id: 'bet_wc_01',
+    slug: 'mbappe-vs-vinicius',
+    title: 'Mbappé vs Vinícius Jr',
+    league: 'World Cup',
+    season: '2026',
+    group: WORLD_CUP_2026,
+    type: 'PLAYER_VS_PLAYER',
+    criteria: "Most goals scored across the World Cup 2026 tournament. Penalty shootouts excluded.",
+    voidConditions: "Void for either player if their nation fails to reach the group stage.",
+    prize: "Loser buys the final-night dinner.",
+    status: 'ACTIVE',
+    heroImage: "https://picsum.photos/seed/wc-final/1200/800",
+    useCustomHero: true,
+    participants: [
+      { name: 'Diogo', side: 'A' },
+      { name: 'Shiv', side: 'B' }
+    ],
+    entities: [
+      { name: 'Kylian Mbappé', type: 'PLAYER', side: 'A', image: "https://picsum.photos/seed/mbappe/240" },
+      { name: 'Vinícius Júnior', type: 'PLAYER', side: 'B', image: "https://picsum.photos/seed/vinicius/240" }
+    ],
+    metrics: {
+      label: 'Goals',
+      valueA: 0,
+      valueB: 0
+    }
+  },
+  {
+    id: 'bet_wc_02',
+    slug: 'argentina-vs-brazil-progress',
+    title: 'Argentina vs Brazil',
+    league: 'World Cup',
+    season: '2026',
+    group: WORLD_CUP_2026,
+    type: 'TEAM_VS_TEAM',
+    criteria: "Which of the two South American giants is eliminated later in the tournament.",
+    voidConditions: "Standard rules apply. A final meeting is settled by the result.",
+    prize: "Bragging rights and a custom jersey for the winner.",
+    status: 'ACTIVE',
+    heroImage: "https://picsum.photos/seed/wc-arg-bra/1200/800",
+    useCustomHero: true,
+    participants: [
+      { name: 'Mitch', side: 'A' },
+      { name: 'Diogo', side: 'B' }
+    ],
+    entities: [
+      { name: 'Argentina', type: 'TEAM', side: 'A', image: "https://picsum.photos/seed/argentina/240" },
+      { name: 'Brazil', type: 'TEAM', side: 'B', image: "https://picsum.photos/seed/brazil/240" }
+    ],
+    metrics: {
+      label: 'Round reached',
+      valueA: 0,
+      valueB: 0
+    }
   }
 ];
+
+// World Cup 2026 prediction categories. Picks are admin-managed; one is shown
+// SETTLED to exercise scoring offline. Replace with real calls via /admin.
+export const MOCK_PREDICTIONS: PredictionCategory[] = [
+  {
+    id: 'pred_01',
+    groupSlug: 'world-cup-2026',
+    name: 'Tournament Winner',
+    details: 'Which nation lifts the trophy in the final.',
+    order: 1,
+    status: 'OPEN',
+    picks: { Diogo: 'France', Mitch: 'Brazil', Shiv: 'England' },
+  },
+  {
+    id: 'pred_02',
+    groupSlug: 'world-cup-2026',
+    name: 'Golden Boot',
+    details: 'Top goalscorer across the whole tournament.',
+    order: 2,
+    status: 'SETTLED',
+    correctAnswer: 'Kylian Mbappé',
+    picks: { Diogo: 'Kylian Mbappé', Mitch: 'Harry Kane', Shiv: 'Vinícius Júnior' },
+  },
+  {
+    id: 'pred_03',
+    groupSlug: 'world-cup-2026',
+    name: 'Golden Ball',
+    details: 'Best overall player of the tournament.',
+    order: 3,
+    status: 'OPEN',
+    picks: { Diogo: 'Jude Bellingham', Mitch: 'Lionel Messi', Shiv: 'Vinícius Júnior' },
+  },
+  {
+    id: 'pred_04',
+    groupSlug: 'world-cup-2026',
+    name: 'Best Young Player',
+    details: 'Standout player aged 21 or under.',
+    order: 4,
+    status: 'OPEN',
+    picks: { Diogo: 'Lamine Yamal', Mitch: 'Endrick', Shiv: 'Arda Güler' },
+  },
+  {
+    id: 'pred_05',
+    groupSlug: 'world-cup-2026',
+    name: 'Dark Horse',
+    details: 'Outsider that makes a surprise deep run.',
+    order: 5,
+    status: 'OPEN',
+    picks: { Diogo: 'Morocco', Mitch: 'USA', Shiv: 'Japan' },
+  },
+  {
+    id: 'pred_06',
+    groupSlug: 'world-cup-2026',
+    name: 'Top Scoring Team',
+    details: 'Nation that scores the most goals overall.',
+    order: 6,
+    status: 'OPEN',
+    picks: { Diogo: 'France', Mitch: 'Brazil', Shiv: 'Spain' },
+  },
+];
+
+// ── World Cup 2026 bracket seed ───────────────────────────────────
+// 48 teams across 12 groups. Placeholder line-ups — replace via admin once the
+// real draw is known. [name, code] per group A–L.
+const WC_GROUP_TEAMS: Record<string, [string, string][]> = {
+  A: [['Mexico', 'MEX'], ['Croatia', 'CRO'], ['Ecuador', 'ECU'], ['Cameroon', 'CMR']],
+  B: [['Canada', 'CAN'], ['Belgium', 'BEL'], ['Morocco', 'MAR'], ['Qatar', 'QAT']],
+  C: [['United States', 'USA'], ['Netherlands', 'NED'], ['Ghana', 'GHA'], ['Saudi Arabia', 'KSA']],
+  D: [['Argentina', 'ARG'], ['Australia', 'AUS'], ['Poland', 'POL'], ['Egypt', 'EGY']],
+  E: [['France', 'FRA'], ['Senegal', 'SEN'], ['Japan', 'JPN'], ['Costa Rica', 'CRC']],
+  F: [['Brazil', 'BRA'], ['Switzerland', 'SUI'], ['Serbia', 'SRB'], ['South Korea', 'KOR']],
+  G: [['England', 'ENG'], ['Uruguay', 'URU'], ['Iran', 'IRN'], ['Tunisia', 'TUN']],
+  H: [['Spain', 'ESP'], ['Denmark', 'DEN'], ['Nigeria', 'NGA'], ['New Zealand', 'NZL']],
+  I: [['Portugal', 'POR'], ['Colombia', 'COL'], ['Ivory Coast', 'CIV'], ['Jamaica', 'JAM']],
+  J: [['Germany', 'GER'], ['Peru', 'PER'], ['Algeria', 'ALG'], ['Panama', 'PAN']],
+  K: [['Italy', 'ITA'], ['Chile', 'CHI'], ['Mali', 'MLI'], ['Honduras', 'HON']],
+  L: [['Wales', 'WAL'], ['Sweden', 'SWE'], ['Paraguay', 'PAR'], ['United Arab Emirates', 'UAE']],
+};
+
+export const MOCK_TEAMS: WCTeam[] = GROUPS.flatMap((grp) =>
+  (WC_GROUP_TEAMS[grp] ?? []).map(([name, code]) => ({ id: code.toLowerCase(), name, code, group: grp })),
+);
+
+const teamIdsByGroup = (grp: string) => MOCK_TEAMS.filter((t) => t.group === grp).map((t) => t.id);
+const rotate = <T,>(arr: T[], n: number): T[] => {
+  const a = [...arr];
+  for (let i = 0; i < (n % a.length); i++) a.push(a.shift() as T);
+  return a;
+};
+
+const buildGroupOrders = (rot: number): Record<string, string[]> => {
+  const o: Record<string, string[]> = {};
+  for (const grp of GROUPS) o[grp] = rotate(teamIdsByGroup(grp), rot);
+  return o;
+};
+
+// Walk the bracket in order, advancing the higher-seeded ('a') slot by default.
+const buildKnockout = (groupOrders: Record<string, string[]>): Record<string, string> => {
+  const ko: Record<string, string> = {};
+  for (const m of MATCHES) {
+    const a = resolveTeam(m.a, groupOrders, ko);
+    const b = resolveTeam(m.b, groupOrders, ko);
+    const winner = a ?? b;
+    if (winner) ko[m.id] = winner;
+  }
+  return ko;
+};
+
+const entryFor = (participant: string, rot: number): BracketEntry => {
+  const groupOrders = buildGroupOrders(rot);
+  return { id: `be_${participant.toLowerCase()}`, participant, groupOrders, knockout: buildKnockout(groupOrders) };
+};
+
+export const MOCK_BRACKET_ENTRIES: BracketEntry[] = [
+  entryFor('Diogo', 0),
+  entryFor('Mitch', 1),
+  entryFor('Shiv', 2),
+];
+
+// Actual results: group stage decided, knockout only through the Round of 32.
+const actualGroupOrders = buildGroupOrders(0);
+const fullActualKnockout = buildKnockout(actualGroupOrders);
+export const MOCK_BRACKET_ACTUAL: BracketActual = {
+  groupOrders: actualGroupOrders,
+  knockout: Object.fromEntries(R32.map((m) => [m.id, fullActualKnockout[m.id]]).filter(([, v]) => v)),
+};
 
 export const LEAGUE_HISTORY: MonthlyStanding[] = [
   {

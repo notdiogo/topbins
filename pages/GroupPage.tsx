@@ -4,6 +4,7 @@ import { useData } from '../context/DataContext';
 import { BetList } from '../components/BetList';
 import { getGroupSummaries, matchesStatusFilter, StatusFilter, GROUP_KIND_LABEL } from '../lib/groups';
 import { computeRecords, winRate } from '../lib/stats';
+import { ALL_GROUPS } from '../constants';
 
 const FILTERS: { key: StatusFilter; label: string }[] = [
   { key: 'ALL', label: 'All' },
@@ -17,20 +18,28 @@ export const GroupPage: React.FC = () => {
   const [filter, setFilter] = useState<StatusFilter>('ALL');
 
   const groupBets = useMemo(() => bets.filter((b) => b.group.slug === groupSlug), [bets, groupSlug]);
-  const group = useMemo(() => getGroupSummaries(groupBets)[0], [groupBets]);
   const records = useMemo(() => computeRecords(groupBets), [groupBets]);
   const filtered = useMemo(() => groupBets.filter((b) => matchesStatusFilter(b, filter)), [groupBets, filter]);
 
-  if (groupBets.length === 0 || !group) {
+  // Prefer the live summary; fall back to a known group so empty seasons still
+  // render a header + empty state instead of a 404.
+  const group = useMemo(() => {
+    const summary = getGroupSummaries(groupBets)[0];
+    if (summary) return summary;
+    const known = ALL_GROUPS.find((g) => g.slug === groupSlug);
+    return known ? { ...known, total: 0, active: 0, settled: 0 } : undefined;
+  }, [groupBets, groupSlug]);
+
+  if (!group) {
     return (
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-24 text-center">
         <h1 className="font-display text-4xl font-bold text-ink">Group not found</h1>
-        <p className="text-muted mt-3">No bets belong to "{groupSlug}".</p>
+        <p className="text-muted mt-3">No competition matches "{groupSlug}".</p>
         <Link
-          to="/bets"
+          to="/"
           className="inline-flex items-center gap-2 mt-6 bg-forest text-stone text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-forest-mid transition-colors"
         >
-          Back to the ledger
+          Back home
         </Link>
       </main>
     );
@@ -40,7 +49,7 @@ export const GroupPage: React.FC = () => {
     <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 md:py-14">
       {/* Header */}
       <div className="mb-8 pb-5 border-b border-warm-border">
-        <Link to="/bets" className="text-xs font-semibold text-forest hover:underline">← All groups</Link>
+        <Link to="/" className="text-xs font-semibold text-forest hover:underline">← Home</Link>
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mt-2">
           <div>
             <p className="text-xs text-muted">{GROUP_KIND_LABEL[group.kind]}</p>

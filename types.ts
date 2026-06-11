@@ -83,6 +83,44 @@ export interface UserStats {
   currentStreak: number;
 }
 
+// ── World Cup Predictions ─────────────────────────────────────────
+// A category each person makes one call on (e.g. "Golden Boot"). One point
+// per pick that matches the admin-recorded correctAnswer once SETTLED.
+export type PredictionStatus = 'OPEN' | 'SETTLED' | 'VOID';
+export interface PredictionCategory {
+  id: string;
+  groupSlug: string;                  // which competition (e.g. 'world-cup-2026')
+  name: string;                       // e.g. "Golden Boot"
+  details: string;                    // tooltip explaining the category
+  order: number;                      // display order
+  picks: Record<string, string>;      // participant name -> their predicted answer
+  correctAnswer?: string;             // set by admin when known
+  status: PredictionStatus;
+}
+
+// ── World Cup Brackets ────────────────────────────────────────────
+export interface WCTeam {
+  id: string;     // 'fra'
+  name: string;   // 'France'
+  code: string;   // 'FRA'
+  group: string;  // 'A'..'L'
+}
+
+// One person's full bracket: predicted finishing order per group + chosen winner
+// per knockout match (keyed by match id from lib/wcBracket).
+export interface BracketEntry {
+  id: string;
+  participant: string;                     // 'Diogo' | 'Mitch' | 'Shiv'
+  groupOrders: Record<string, string[]>;   // group -> [teamId x4] in predicted order
+  knockout: Record<string, string>;        // matchId -> predicted winning teamId
+}
+
+// The real results, maintained by admin as the tournament unfolds.
+export interface BracketActual {
+  groupOrders: Record<string, string[]>;
+  knockout: Record<string, string>;
+}
+
 export interface GenerationResult {
   strategy: string;
   focusPoints: string[];

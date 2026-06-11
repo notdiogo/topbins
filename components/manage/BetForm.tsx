@@ -191,7 +191,7 @@ export const BetForm: React.FC<BetFormProps> = ({ initial, onSave, onCancel, isS
                 value={form.result ?? ''}
                 onChange={(e) => set('result', (e.target.value || undefined) as Bet['result'])}
               >
-                <option value="">— pick —</option>
+                <option value="">Select…</option>
                 {RESULT_OPTIONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </Field>
