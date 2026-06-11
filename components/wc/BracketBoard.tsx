@@ -24,7 +24,6 @@ export const BracketBoard: React.FC<Props> = ({ entries, actual, teams }) => {
     teams.forEach((t) => m.set(t.id, t));
     return m;
   }, [teams]);
-  const label = (id?: string) => (id ? teamById.get(id)?.code ?? id.toUpperCase() : '');
   const fullName = (id?: string) => (id ? teamById.get(id)?.name ?? id : '');
 
   const entry = entries.find((e) => e.participant === person);
