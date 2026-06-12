@@ -3,7 +3,7 @@ import { NavItem, SectionId, Bet, UserStats, MonthlyStanding, PredictionCategory
 import { GROUPS, MATCHES, R32, resolveTeam } from './lib/wcBracket';
 
 // Auto-updated by fetch_and_update.py
-export const LAST_UPDATED = 'Wed Jun 10, 7:07 PM EST';
+export const LAST_UPDATED = 'Thu Jun 11, 7:13 PM EST';
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'HQ', id: SectionId.HOME },
